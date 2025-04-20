@@ -3,7 +3,7 @@ syntax = "proto3";
 package game;
 
 // dónde debe ubicarse el paquete Go generado y qué nombre de importación debe tener.
-option go_package = "arcade-racing/server/game";
+option go_package = "/game";
 
 service GameService {
   rpc JoinGame (JoinRequest) returns (JoinResponse);
