@@ -3,9 +3,13 @@ package main
 import (
 	"context"
 
+	"fmt"
+	"log"
+	"net"
+
 	pb "/game" // Ruta generada del proto compilado
-	// gRPC de Go
-	// Para generar IDs únicos de jugador
+	"google.golang.org/grpc" // gRPC de Go
+	"github.com/google/uuid"  // Para generar IDs únicos de jugador
 )
 
 // server representa el servidor del juego.
