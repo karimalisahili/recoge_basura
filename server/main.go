@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"arcade_racing/server/protos"
+	"fmt"
+)
 
 func main() {
-	fmt.Println("Hello, World!")
+	message := protos.Hello("Karim")
+	fmt.Println(message)
 }
