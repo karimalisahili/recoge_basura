@@ -10,7 +10,7 @@ protoc --go_out=server --go-grpc_out=server proto/game.proto
 ## Correr el servidor 
 
 ```bash
-go run server/main.go
+go run server/server.go
 ```
 
 Cliente Python
