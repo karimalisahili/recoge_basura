@@ -29,3 +29,24 @@ go mod tidy
 python -m grpc_tools.protoc -I=proto --python_out=client --grpc_python_out=client proto/game.proto
 
 ```
+
+### Correr el servidor 
+
+Desde la raiz (arcade_racing) ejecutar.
+```bash
+python client/client.py
+```
+
+
+### Dependencias
+
+1. Para pasar nuevas dependencias
+
+```bash
+pip freeze > requirements.txt
+```
+2. Para instalar dependencias
+
+```bash
+pip install -r requirements.txt
+```

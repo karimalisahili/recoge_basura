@@ -15,7 +15,7 @@ Returns:
 
 def join_game(stub, name):
     
-    request = game_pb2.JoinGameRequest(name=name)
+    request = game_pb2.JoinRequest(name=name)
     response = stub.JoinGame(request)
     
     print(f"[Cliente] ID asignado: {response.id}")
