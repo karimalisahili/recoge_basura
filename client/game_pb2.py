@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ngame.proto\x12\x04game\"\x1b\n\x0bJoinRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"+\n\x0cJoinResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t2@\n\x0bGameService\x12\x31\n\x08JoinGame\x12\x11.game.JoinRequest\x1a\x12.game.JoinResponseB\tZ\x07/protosb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ngame.proto\x12\x04game\"<\n\x13\x43reateOrJoinRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x17\n\x0frequest_players\x18\x02 \x01(\x05\"^\n\x14\x43reateOrJoinResponse\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x1c\n\x14total_players_needed\x18\x02 \x01(\x05\x12\x15\n\rplayer_joined\x18\x03 \x01(\x08\" \n\x0bWaitRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\"j\n\nGameUpdate\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x17\n\x0f\x63urrent_players\x18\x02 \x01(\x05\x12\x1c\n\x14total_players_needed\x18\x03 \x01(\x05\x12\x14\n\x0cgame_started\x18\x04 \x01(\x08\x32\x93\x01\n\x0bGameService\x12I\n\x10\x43reateOrJoinGame\x12\x19.game.CreateOrJoinRequest\x1a\x1a.game.CreateOrJoinResponse\x12\x39\n\x10WaitForGameStart\x12\x11.game.WaitRequest\x1a\x10.game.GameUpdate0\x01\x42\tZ\x07/protosb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,10 +32,14 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'game_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z\007/protos'
-  _globals['_JOINREQUEST']._serialized_start=20
-  _globals['_JOINREQUEST']._serialized_end=47
-  _globals['_JOINRESPONSE']._serialized_start=49
-  _globals['_JOINRESPONSE']._serialized_end=92
-  _globals['_GAMESERVICE']._serialized_start=94
-  _globals['_GAMESERVICE']._serialized_end=158
+  _globals['_CREATEORJOINREQUEST']._serialized_start=20
+  _globals['_CREATEORJOINREQUEST']._serialized_end=80
+  _globals['_CREATEORJOINRESPONSE']._serialized_start=82
+  _globals['_CREATEORJOINRESPONSE']._serialized_end=176
+  _globals['_WAITREQUEST']._serialized_start=178
+  _globals['_WAITREQUEST']._serialized_end=210
+  _globals['_GAMEUPDATE']._serialized_start=212
+  _globals['_GAMEUPDATE']._serialized_end=318
+  _globals['_GAMESERVICE']._serialized_start=321
+  _globals['_GAMESERVICE']._serialized_end=468
 # @@protoc_insertion_point(module_scope)

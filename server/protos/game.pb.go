@@ -21,27 +21,28 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type JoinRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+type CreateOrJoinRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Name           string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`                                            //nombre del jugador
+	RequestPlayers int32                  `protobuf:"varint,2,opt,name=request_players,json=requestPlayers,proto3" json:"request_players,omitempty"` //cuantos jugadores hay
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
-func (x *JoinRequest) Reset() {
-	*x = JoinRequest{}
+func (x *CreateOrJoinRequest) Reset() {
+	*x = CreateOrJoinRequest{}
 	mi := &file_proto_game_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *JoinRequest) String() string {
+func (x *CreateOrJoinRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*JoinRequest) ProtoMessage() {}
+func (*CreateOrJoinRequest) ProtoMessage() {}
 
-func (x *JoinRequest) ProtoReflect() protoreflect.Message {
+func (x *CreateOrJoinRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_game_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -53,40 +54,48 @@ func (x *JoinRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use JoinRequest.ProtoReflect.Descriptor instead.
-func (*JoinRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreateOrJoinRequest.ProtoReflect.Descriptor instead.
+func (*CreateOrJoinRequest) Descriptor() ([]byte, []int) {
 	return file_proto_game_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *JoinRequest) GetName() string {
+func (x *CreateOrJoinRequest) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-type JoinResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+func (x *CreateOrJoinRequest) GetRequestPlayers() int32 {
+	if x != nil {
+		return x.RequestPlayers
+	}
+	return 0
 }
 
-func (x *JoinResponse) Reset() {
-	*x = JoinResponse{}
+type CreateOrJoinResponse struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId           string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`                                  //id de jugador devuelto por el servidor
+	TotalPlayersNeeded int32                  `protobuf:"varint,2,opt,name=total_players_needed,json=totalPlayersNeeded,proto3" json:"total_players_needed,omitempty"` //el primer jugador que entra decide y el servidor manda para saber si es igual o diferente
+	PlayerJoined       bool                   `protobuf:"varint,3,opt,name=player_joined,json=playerJoined,proto3" json:"player_joined,omitempty"`                     //true si el jugador pudo unirse
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *CreateOrJoinResponse) Reset() {
+	*x = CreateOrJoinResponse{}
 	mi := &file_proto_game_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *JoinResponse) String() string {
+func (x *CreateOrJoinResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*JoinResponse) ProtoMessage() {}
+func (*CreateOrJoinResponse) ProtoMessage() {}
 
-func (x *JoinResponse) ProtoReflect() protoreflect.Message {
+func (x *CreateOrJoinResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_game_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -98,37 +107,167 @@ func (x *JoinResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use JoinResponse.ProtoReflect.Descriptor instead.
-func (*JoinResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreateOrJoinResponse.ProtoReflect.Descriptor instead.
+func (*CreateOrJoinResponse) Descriptor() ([]byte, []int) {
 	return file_proto_game_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *JoinResponse) GetId() string {
+func (x *CreateOrJoinResponse) GetPlayerId() string {
 	if x != nil {
-		return x.Id
+		return x.PlayerId
 	}
 	return ""
 }
 
-func (x *JoinResponse) GetMessage() string {
+func (x *CreateOrJoinResponse) GetTotalPlayersNeeded() int32 {
+	if x != nil {
+		return x.TotalPlayersNeeded
+	}
+	return 0
+}
+
+func (x *CreateOrJoinResponse) GetPlayerJoined() bool {
+	if x != nil {
+		return x.PlayerJoined
+	}
+	return false
+}
+
+type WaitRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"` //solicitar esperar para empezar el juego
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WaitRequest) Reset() {
+	*x = WaitRequest{}
+	mi := &file_proto_game_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WaitRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WaitRequest) ProtoMessage() {}
+
+func (x *WaitRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_game_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WaitRequest.ProtoReflect.Descriptor instead.
+func (*WaitRequest) Descriptor() ([]byte, []int) {
+	return file_proto_game_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *WaitRequest) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+type GameUpdate struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Message            string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`                                                    //Mensaje general ("Esperando jugadores", "Comenzando el juego")
+	CurrentPlayers     int32                  `protobuf:"varint,2,opt,name=current_players,json=currentPlayers,proto3" json:"current_players,omitempty"`               //cuantos jugadores hay conectados ahora
+	TotalPlayersNeeded int32                  `protobuf:"varint,3,opt,name=total_players_needed,json=totalPlayersNeeded,proto3" json:"total_players_needed,omitempty"` //cuantos se necesitan para comenzar
+	GameStarted        bool                   `protobuf:"varint,4,opt,name=game_started,json=gameStarted,proto3" json:"game_started,omitempty"`                        //true cuando se puede empezar el juego
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *GameUpdate) Reset() {
+	*x = GameUpdate{}
+	mi := &file_proto_game_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GameUpdate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GameUpdate) ProtoMessage() {}
+
+func (x *GameUpdate) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_game_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GameUpdate.ProtoReflect.Descriptor instead.
+func (*GameUpdate) Descriptor() ([]byte, []int) {
+	return file_proto_game_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GameUpdate) GetMessage() string {
 	if x != nil {
 		return x.Message
 	}
 	return ""
 }
 
+func (x *GameUpdate) GetCurrentPlayers() int32 {
+	if x != nil {
+		return x.CurrentPlayers
+	}
+	return 0
+}
+
+func (x *GameUpdate) GetTotalPlayersNeeded() int32 {
+	if x != nil {
+		return x.TotalPlayersNeeded
+	}
+	return 0
+}
+
+func (x *GameUpdate) GetGameStarted() bool {
+	if x != nil {
+		return x.GameStarted
+	}
+	return false
+}
+
 var File_proto_game_proto protoreflect.FileDescriptor
 
 const file_proto_game_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/game.proto\x12\x04game\"!\n" +
-	"\vJoinRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"8\n" +
-	"\fJoinResponse\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2@\n" +
-	"\vGameService\x121\n" +
-	"\bJoinGame\x12\x11.game.JoinRequest\x1a\x12.game.JoinResponseB\tZ\a/protosb\x06proto3"
+	"\x10proto/game.proto\x12\x04game\"R\n" +
+	"\x13CreateOrJoinRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12'\n" +
+	"\x0frequest_players\x18\x02 \x01(\x05R\x0erequestPlayers\"\x8a\x01\n" +
+	"\x14CreateOrJoinResponse\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x120\n" +
+	"\x14total_players_needed\x18\x02 \x01(\x05R\x12totalPlayersNeeded\x12#\n" +
+	"\rplayer_joined\x18\x03 \x01(\bR\fplayerJoined\"*\n" +
+	"\vWaitRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\"\xa4\x01\n" +
+	"\n" +
+	"GameUpdate\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\x12'\n" +
+	"\x0fcurrent_players\x18\x02 \x01(\x05R\x0ecurrentPlayers\x120\n" +
+	"\x14total_players_needed\x18\x03 \x01(\x05R\x12totalPlayersNeeded\x12!\n" +
+	"\fgame_started\x18\x04 \x01(\bR\vgameStarted2\x93\x01\n" +
+	"\vGameService\x12I\n" +
+	"\x10CreateOrJoinGame\x12\x19.game.CreateOrJoinRequest\x1a\x1a.game.CreateOrJoinResponse\x129\n" +
+	"\x10WaitForGameStart\x12\x11.game.WaitRequest\x1a\x10.game.GameUpdate0\x01B\tZ\a/protosb\x06proto3"
 
 var (
 	file_proto_game_proto_rawDescOnce sync.Once
@@ -142,16 +281,20 @@ func file_proto_game_proto_rawDescGZIP() []byte {
 	return file_proto_game_proto_rawDescData
 }
 
-var file_proto_game_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_game_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_game_proto_goTypes = []any{
-	(*JoinRequest)(nil),  // 0: game.JoinRequest
-	(*JoinResponse)(nil), // 1: game.JoinResponse
+	(*CreateOrJoinRequest)(nil),  // 0: game.CreateOrJoinRequest
+	(*CreateOrJoinResponse)(nil), // 1: game.CreateOrJoinResponse
+	(*WaitRequest)(nil),          // 2: game.WaitRequest
+	(*GameUpdate)(nil),           // 3: game.GameUpdate
 }
 var file_proto_game_proto_depIdxs = []int32{
-	0, // 0: game.GameService.JoinGame:input_type -> game.JoinRequest
-	1, // 1: game.GameService.JoinGame:output_type -> game.JoinResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	0, // 0: game.GameService.CreateOrJoinGame:input_type -> game.CreateOrJoinRequest
+	2, // 1: game.GameService.WaitForGameStart:input_type -> game.WaitRequest
+	1, // 2: game.GameService.CreateOrJoinGame:output_type -> game.CreateOrJoinResponse
+	3, // 3: game.GameService.WaitForGameStart:output_type -> game.GameUpdate
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -168,7 +311,7 @@ func file_proto_game_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_game_proto_rawDesc), len(file_proto_game_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

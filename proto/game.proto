@@ -7,14 +7,33 @@ package game;
 option go_package = "/protos";
 
 service GameService {
-  rpc JoinGame (JoinRequest) returns (JoinResponse);
+
+  //El jugador crea o se conecta al juego
+  rpc CreateOrJoinGame (CreateOrJoinRequest) returns (CreateOrJoinResponse);
+  
+  //El jugador se queda escuchando al servidor para saber cuando empezar
+  rpc WaitForGameStart (WaitRequest) returns (stream GameUpdate);
 }
 
-message JoinRequest {
-  string name = 1;
+message CreateOrJoinRequest {
+  string name = 1; //nombre del jugador
+  int32 request_players = 2; //cuantos jugadores hay
 }
 
-message JoinResponse {
-  string id = 1;
-  string message = 2;
+message CreateOrJoinResponse {
+  string player_id = 1; //id de jugador devuelto por el servidor
+  int32 total_players_needed = 2; //el primer jugador que entra decide y el servidor manda para saber si es igual o diferente
+  bool player_joined = 3; //true si el jugador pudo unirse
 }
+
+message WaitRequest {
+  string player_id = 1; //solicitar esperar para empezar el juego
+}
+
+message GameUpdate {
+  string message = 1; //Mensaje general ("Esperando jugadores", "Comenzando el juego")
+  int32 current_players = 2; //cuantos jugadores hay conectados ahora
+  int32 total_players_needed = 3; //cuantos se necesitan para comenzar
+  bool game_started = 4; //true cuando se puede empezar el juego
+}
+

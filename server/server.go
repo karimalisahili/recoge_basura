@@ -3,7 +3,6 @@ package main
 import (
 	pb "arcade_racing/server/protos"
 	"context"
-	"fmt"
 	"log"
 	"net"
 
@@ -17,7 +16,8 @@ import (
 
 type server struct {
 	pb.UnimplementedGameServiceServer
-	players map[string]string
+	players              map[string]string
+	total_players_needed int32
 }
 
 // JoinGame es una RPC que permite a un jugador unirse al juego.
@@ -26,20 +26,50 @@ type server struct {
 // @param req - solicitud que contiene el nombre del jugador
 // @return JoinResponse con el ID generado y un mensaje de bienvenida
 // @error si ocurre algún fallo interno
-func (s *server) JoinGame(ctx context.Context, req *pb.JoinRequest) (*pb.JoinResponse, error) {
+func (s *server) CreateOrJoinGame(ctx context.Context, req *pb.CreateOrJoinRequest) (*pb.CreateOrJoinResponse, error) {
+	var player_joined bool
+	var id string = ""
 
-	//Genera un ID único para el jugador
-	id := uuid.New().String()
+	//Guarda la cantidad de jugadores creada o necesitada
+	if s.total_players_needed == 0 {
+		s.total_players_needed = req.RequestPlayers
+	}
 
-	//Guarda el jugador en el mapa de jugadores
-	s.players[id] = req.Name
+	//si ya estan todos los jugadores no recibas mas
+	if s.total_players_needed == int32(len(s.players)) {
+		player_joined = false
+		return &pb.CreateOrJoinResponse{
+			PlayerJoined: player_joined,
+		}, nil
+	}
+
+	if s.total_players_needed == req.RequestPlayers {
+
+		player_joined = true
+
+		//Genera un ID único para el jugador
+		id = uuid.New().String()
+
+		//Guarda el jugador en el mapa de jugadores
+		s.players[id] = req.Name
+
+	} else {
+		player_joined = false
+		log.Printf("cliente no se unio")
+	}
 
 	//Log del evento
-	log.Printf("Jugador %s se unió al juego con ID %s", req.Name, id)
+	if id != "" {
+		log.Printf("Jugador %s se unió al juego con ID %s", req.Name, id)
+	}
 
-	return &pb.JoinResponse{
-		Id:      id,
-		Message: fmt.Sprintf("Bienvenido, %s!", req.Name),
+	log.Printf("Cantidad de jugadores necesitada: %d ", s.total_players_needed)
+	log.Printf("Cantidad de jugadores en sala %d: ", len(s.players))
+
+	return &pb.CreateOrJoinResponse{
+		PlayerId:           id,
+		TotalPlayersNeeded: s.total_players_needed,
+		PlayerJoined:       player_joined,
 	}, nil
 }
 
@@ -49,6 +79,7 @@ func (s *server) JoinGame(ctx context.Context, req *pb.JoinRequest) (*pb.JoinRes
 // Si ocurre un error en la conexión, o al servir, se detiene el servidor.
 
 func main() {
+
 	//Escucha en el puerto 50051 (puerto TCP local)
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {

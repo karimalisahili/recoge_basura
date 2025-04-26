@@ -13,13 +13,17 @@ Returns:
     None
 """
 
-def join_game(stub, name):
-    
-    request = game_pb2.JoinRequest(name=name)
-    response = stub.JoinGame(request)
-    
-    print(f"[Cliente] ID asignado: {response.id}")
-    print(f"[Servidor] {response.message}")
+def create_or_join_game(stub, name, request_players):
+    request_players_int = int(request_players)
+    request = game_pb2.CreateOrJoinRequest(name=name, request_players=request_players_int)
+    response = stub.CreateOrJoinGame(request)
+    print(response)
+    if(response.player_joined):
+        print(f"[Cliente] ID asignado: {response.player_id}")
+        print(f"[Cliente] se unio, cantidad de jugadores: {response.total_players_needed}")
+    else:
+        print(f"[Cliente] no se unio porque la sala esta llena o la , cantidad de jugadores o sala llena: {response.total_players_needed}")
+
     
 
 """
@@ -35,7 +39,8 @@ def main():
     channel = grpc.insecure_channel('localhost:50051')
     stub = game_pb2_grpc.GameServiceStub(channel)
     name = input("Ingrese su nombre: ")
-    join_game(stub, name)
+    request_players = input("Ingrese la cantidad de jugadores 2, 3 o 4: ")
+    create_or_join_game(stub, name, request_players)
     
 if __name__ == "__main__":
     main()
