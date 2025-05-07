@@ -23,7 +23,6 @@ type server struct {
 	waitingPlayersStreams map[string]pb.GameService_WaitForGameStartServer
 	totalPlayersNeeded    int32
 	gameStarted           bool
-	gameStartChannel      chan bool
 }
 
 // NewServer crea una nueva instancia del servidor con los valores iniciales.
@@ -33,7 +32,6 @@ func NewServer() *server {
 		waitingPlayersStreams: make(map[string]pb.GameService_WaitForGameStartServer),
 		totalPlayersNeeded:    0,
 		gameStarted:           false,
-		gameStartChannel:      make(chan bool),
 	}
 }
 
