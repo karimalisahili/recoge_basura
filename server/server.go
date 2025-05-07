@@ -5,6 +5,8 @@ import (
 	"context"
 	"log"
 	"net"
+	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -16,8 +18,23 @@ import (
 
 type server struct {
 	pb.UnimplementedGameServiceServer
-	players              map[string]string
-	total_players_needed int32
+	mu                    sync.Mutex
+	players               map[string]string
+	waitingPlayersStreams map[string]pb.GameService_WaitForGameStartServer
+	totalPlayersNeeded    int32
+	gameStarted           bool
+	gameStartChannel      chan bool
+}
+
+// NewServer crea una nueva instancia del servidor con los valores iniciales.
+func NewServer() *server {
+	return &server{
+		players:               make(map[string]string),
+		waitingPlayersStreams: make(map[string]pb.GameService_WaitForGameStartServer),
+		totalPlayersNeeded:    0,
+		gameStarted:           false,
+		gameStartChannel:      make(chan bool),
+	}
 }
 
 // JoinGame es una RPC que permite a un jugador unirse al juego.
@@ -31,19 +48,19 @@ func (s *server) CreateOrJoinGame(ctx context.Context, req *pb.CreateOrJoinReque
 	var id string = ""
 
 	//Guarda la cantidad de jugadores creada o necesitada
-	if s.total_players_needed == 0 {
-		s.total_players_needed = req.RequestPlayers
+	if s.totalPlayersNeeded == 0 {
+		s.totalPlayersNeeded = req.RequestPlayers
 	}
 
 	//si ya estan todos los jugadores no recibas mas
-	if s.total_players_needed == int32(len(s.players)) {
+	if s.totalPlayersNeeded == int32(len(s.players)) {
 		player_joined = false
 		return &pb.CreateOrJoinResponse{
 			PlayerJoined: player_joined,
 		}, nil
 	}
 
-	if s.total_players_needed == req.RequestPlayers {
+	if s.totalPlayersNeeded == req.RequestPlayers {
 
 		player_joined = true
 
@@ -63,14 +80,88 @@ func (s *server) CreateOrJoinGame(ctx context.Context, req *pb.CreateOrJoinReque
 		log.Printf("Jugador %s se unió al juego con ID %s", req.Name, id)
 	}
 
-	log.Printf("Cantidad de jugadores necesitada: %d ", s.total_players_needed)
+	log.Printf("Cantidad de jugadores necesitada: %d ", s.totalPlayersNeeded)
 	log.Printf("Cantidad de jugadores en sala %d: ", len(s.players))
 
 	return &pb.CreateOrJoinResponse{
 		PlayerId:           id,
-		TotalPlayersNeeded: s.total_players_needed,
+		TotalPlayersNeeded: s.totalPlayersNeeded,
 		PlayerJoined:       player_joined,
 	}, nil
+}
+
+func (s *server) WaitForGameStart(req *pb.WaitRequest, stream pb.GameService_WaitForGameStartServer) error {
+	//recibir el id del jugador
+	var playerId string = req.PlayerId
+	log.Printf("Jugador se unió al juego con ID %s", playerId)
+
+	s.mu.Lock()
+	s.waitingPlayersStreams[playerId] = stream
+	totalPlayersNeeded := s.totalPlayersNeeded
+	s.mu.Unlock()
+
+	// iterar en los updates
+	for {
+		s.mu.Lock()
+		gameStarted := s.gameStarted
+		currentPlayers := int32(len(s.players))
+		s.mu.Unlock()
+
+		err := stream.Send(&pb.GameUpdate{
+			Message:            "Esperando jugadores...",
+			CurrentPlayers:     currentPlayers,
+			TotalPlayersNeeded: totalPlayersNeeded,
+			GameStarted:        gameStarted,
+		})
+
+		if err != nil {
+			//sacar jugador
+			s.removeWaitingPlayer(playerId)
+			return err
+		}
+
+		if gameStarted {
+			return nil //El juego ha comenzdo, finalizar el stream para este jugador
+		}
+
+		time.Sleep(2 * time.Second) //Actualizar cada 2 segundos
+	}
+}
+
+// elimina el stream del jugador del mapa de streams
+func (s *server) removeWaitingPlayer(playerId string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.waitingPlayersStreams, playerId)
+}
+
+// actualiza el estado del juego a iniciado y notifica a todos los jugadores en espera
+func (s *server) startGame() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !s.gameStarted && s.totalPlayersNeeded > 0 && int32(len(s.players)) == s.totalPlayersNeeded {
+		log.Println("Suficientes jugadores conectados, el juego comienza")
+		s.gameStarted = true
+		for _, stream := range s.waitingPlayersStreams {
+			go func(st pb.GameService_WaitForGameStartServer) {
+				st.Send(&pb.GameUpdate{
+					Message:            "¡El juego ha comenzado!",
+					CurrentPlayers:     s.totalPlayersNeeded,
+					TotalPlayersNeeded: s.totalPlayersNeeded,
+					GameStarted:        true,
+				})
+			}(stream) //se pasa como argumento el valor actual de stream a la funcion
+		}
+	}
+}
+
+// verificar periodicamente si el juego ha comenzado
+func (s *server) checkGameStart() {
+	for {
+		time.Sleep(1 * time.Second)
+		s.startGame()
+	}
 }
 
 // main incializa y ejecuta el servidor gRPC del juego.
@@ -89,8 +180,14 @@ func main() {
 	//Crea una nueva instancia del servidor gRPC
 	s := grpc.NewServer()
 
+	//Instancio el servidor del juego
+	gameServer := NewServer()
+
 	//Registra el servicio con la implentación personalizada
-	pb.RegisterGameServiceServer(s, &server{players: make(map[string]string)})
+	pb.RegisterGameServiceServer(s, gameServer)
+
+	//Inicia una gorutine para verificar periodicamente si el juego puede comenzar
+	go gameServer.checkGameStart()
 
 	log.Println("Servidor gRPC escuchando en el puerto 50051...")
 
