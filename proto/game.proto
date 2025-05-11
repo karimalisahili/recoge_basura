@@ -12,7 +12,11 @@ service GameService {
   rpc CreateOrJoinGame (CreateOrJoinRequest) returns (CreateOrJoinResponse);
   
   //El jugador se queda escuchando al servidor para saber cuando empezar
-  rpc WaitForGameStart (WaitRequest) returns (stream GameUpdate);
+  rpc WaitForGameStart (WaitRequest) returns (stream WaitResponse);
+
+  //Actualiza el juego
+  rpc GameUpdate (stream GameUpdateRequest
+  ) returns (stream GameUpdateResponse);
 }
 
 message CreateOrJoinRequest {
@@ -30,10 +34,18 @@ message WaitRequest {
   string player_id = 1; //solicitar esperar para empezar el juego
 }
 
-message GameUpdate {
+message WaitResponse {
   string message = 1; //Mensaje general ("Esperando jugadores", "Comenzando el juego")
   int32 current_players = 2; //cuantos jugadores hay conectados ahora
   int32 total_players_needed = 3; //cuantos se necesitan para comenzar
   bool game_started = 4; //true cuando se puede empezar el juego
+}
+
+message GameUpdateRequest {
+  string player_id = 1; //id del jugador
+}
+
+message GameUpdateResponse {
+  map<string, string> players= 1; //mapa de todos los jugadores con sus ids y nombres
 }
 

@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	GameService_CreateOrJoinGame_FullMethodName = "/game.GameService/CreateOrJoinGame"
 	GameService_WaitForGameStart_FullMethodName = "/game.GameService/WaitForGameStart"
+	GameService_GameUpdate_FullMethodName       = "/game.GameService/GameUpdate"
 )
 
 // GameServiceClient is the client API for GameService service.
@@ -30,7 +31,9 @@ type GameServiceClient interface {
 	// El jugador crea o se conecta al juego
 	CreateOrJoinGame(ctx context.Context, in *CreateOrJoinRequest, opts ...grpc.CallOption) (*CreateOrJoinResponse, error)
 	// El jugador se queda escuchando al servidor para saber cuando empezar
-	WaitForGameStart(ctx context.Context, in *WaitRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GameUpdate], error)
+	WaitForGameStart(ctx context.Context, in *WaitRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[WaitResponse], error)
+	// Actualiza el juego
+	GameUpdate(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[GameUpdateRequest, GameUpdateResponse], error)
 }
 
 type gameServiceClient struct {
@@ -51,13 +54,13 @@ func (c *gameServiceClient) CreateOrJoinGame(ctx context.Context, in *CreateOrJo
 	return out, nil
 }
 
-func (c *gameServiceClient) WaitForGameStart(ctx context.Context, in *WaitRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GameUpdate], error) {
+func (c *gameServiceClient) WaitForGameStart(ctx context.Context, in *WaitRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[WaitResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &GameService_ServiceDesc.Streams[0], GameService_WaitForGameStart_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[WaitRequest, GameUpdate]{ClientStream: stream}
+	x := &grpc.GenericClientStream[WaitRequest, WaitResponse]{ClientStream: stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -68,7 +71,20 @@ func (c *gameServiceClient) WaitForGameStart(ctx context.Context, in *WaitReques
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type GameService_WaitForGameStartClient = grpc.ServerStreamingClient[GameUpdate]
+type GameService_WaitForGameStartClient = grpc.ServerStreamingClient[WaitResponse]
+
+func (c *gameServiceClient) GameUpdate(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[GameUpdateRequest, GameUpdateResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &GameService_ServiceDesc.Streams[1], GameService_GameUpdate_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[GameUpdateRequest, GameUpdateResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GameService_GameUpdateClient = grpc.BidiStreamingClient[GameUpdateRequest, GameUpdateResponse]
 
 // GameServiceServer is the server API for GameService service.
 // All implementations must embed UnimplementedGameServiceServer
@@ -77,7 +93,9 @@ type GameServiceServer interface {
 	// El jugador crea o se conecta al juego
 	CreateOrJoinGame(context.Context, *CreateOrJoinRequest) (*CreateOrJoinResponse, error)
 	// El jugador se queda escuchando al servidor para saber cuando empezar
-	WaitForGameStart(*WaitRequest, grpc.ServerStreamingServer[GameUpdate]) error
+	WaitForGameStart(*WaitRequest, grpc.ServerStreamingServer[WaitResponse]) error
+	// Actualiza el juego
+	GameUpdate(grpc.BidiStreamingServer[GameUpdateRequest, GameUpdateResponse]) error
 	mustEmbedUnimplementedGameServiceServer()
 }
 
@@ -91,8 +109,11 @@ type UnimplementedGameServiceServer struct{}
 func (UnimplementedGameServiceServer) CreateOrJoinGame(context.Context, *CreateOrJoinRequest) (*CreateOrJoinResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateOrJoinGame not implemented")
 }
-func (UnimplementedGameServiceServer) WaitForGameStart(*WaitRequest, grpc.ServerStreamingServer[GameUpdate]) error {
+func (UnimplementedGameServiceServer) WaitForGameStart(*WaitRequest, grpc.ServerStreamingServer[WaitResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method WaitForGameStart not implemented")
+}
+func (UnimplementedGameServiceServer) GameUpdate(grpc.BidiStreamingServer[GameUpdateRequest, GameUpdateResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method GameUpdate not implemented")
 }
 func (UnimplementedGameServiceServer) mustEmbedUnimplementedGameServiceServer() {}
 func (UnimplementedGameServiceServer) testEmbeddedByValue()                     {}
@@ -138,11 +159,18 @@ func _GameService_WaitForGameStart_Handler(srv interface{}, stream grpc.ServerSt
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(GameServiceServer).WaitForGameStart(m, &grpc.GenericServerStream[WaitRequest, GameUpdate]{ServerStream: stream})
+	return srv.(GameServiceServer).WaitForGameStart(m, &grpc.GenericServerStream[WaitRequest, WaitResponse]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type GameService_WaitForGameStartServer = grpc.ServerStreamingServer[GameUpdate]
+type GameService_WaitForGameStartServer = grpc.ServerStreamingServer[WaitResponse]
+
+func _GameService_GameUpdate_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GameServiceServer).GameUpdate(&grpc.GenericServerStream[GameUpdateRequest, GameUpdateResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GameService_GameUpdateServer = grpc.BidiStreamingServer[GameUpdateRequest, GameUpdateResponse]
 
 // GameService_ServiceDesc is the grpc.ServiceDesc for GameService service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -161,6 +189,12 @@ var GameService_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "WaitForGameStart",
 			Handler:       _GameService_WaitForGameStart_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "GameUpdate",
+			Handler:       _GameService_GameUpdate_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "proto/game.proto",

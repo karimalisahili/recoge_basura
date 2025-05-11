@@ -105,7 +105,7 @@ func (s *server) WaitForGameStart(req *pb.WaitRequest, stream pb.GameService_Wai
 		currentPlayers := int32(len(s.players))
 		s.mu.Unlock()
 
-		err := stream.Send(&pb.GameUpdate{
+		err := stream.Send(&pb.WaitResponse{
 			Message:            "Esperando jugadores...",
 			CurrentPlayers:     currentPlayers,
 			TotalPlayersNeeded: totalPlayersNeeded,
@@ -143,7 +143,7 @@ func (s *server) startGame() {
 		s.gameStarted = true
 		for _, stream := range s.waitingPlayersStreams {
 			go func(st pb.GameService_WaitForGameStartServer) {
-				st.Send(&pb.GameUpdate{
+				st.Send(&pb.WaitResponse{
 					Message:            "¡El juego ha comenzado!",
 					CurrentPlayers:     s.totalPlayersNeeded,
 					TotalPlayersNeeded: s.totalPlayersNeeded,
@@ -161,6 +161,11 @@ func (s *server) checkGameStart() {
 		s.startGame()
 	}
 }
+
+//funcion que cada segundo envia un mensaje a los jugadores en el juego 
+// con un arreglo de los ids de los jugadores en el juego y 
+// y cada segundo el cada cliente le envia su id para saber que sigue 
+//en el juego y lo imprime 
 
 // main incializa y ejecuta el servidor gRPC del juego.
 //
@@ -194,3 +199,5 @@ func main() {
 		log.Fatalf("Error al servir: %v", err)
 	}
 }
+
+
