@@ -46,15 +46,15 @@ class Game:
         self.scoreboard = Scoreboard(self.players)
         # Add trash bins to the map
         bin_positions = [
-            ((22 * TILE_SIZE, 17 * TILE_SIZE), 'plastic'),  # Position and type for plastic bin
-            ((27 * TILE_SIZE, 17 * TILE_SIZE), 'paper'),    # Position and type for paper bin
-            ((32 * TILE_SIZE, 17 * TILE_SIZE), 'glass')     # Position and type for glass bin
+            ((22 * TILE_SIZE, 17 * TILE_SIZE), 'recycle'),  # Position and type for recycle bin
+            ((27 * TILE_SIZE, 17 * TILE_SIZE), 'garbage'),    # Position and type for garbage bin
+            ((32 * TILE_SIZE, 17 * TILE_SIZE), 'compost')     # Position and type for compost bin
         ]
         for pos, bin_type in bin_positions:
             TrashBin(pos, (self.all_sprites, self.trash_group), bin_type)  # Add bins to trash_group
 
         # Add trash objects within the specified range
-        trash_types = ['plastic', 'paper', 'glass']  # Define the types of trash
+        trash_types = ['recycle', 'garbage', 'compost']  # Define the types of trash
         for _ in range(10):  # Add 10 trash objects randomly
             x = randint(19, 35) * TILE_SIZE  # X-coordinate within 17 to 36
             y = randint(18, 35) * TILE_SIZE  # Y-coordinate within 16 to 36

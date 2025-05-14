@@ -58,6 +58,7 @@ class Player(pygame.sprite.Sprite):
                     trash.kill()  # Remove the trash from the game
                     self.carrying_trash = True  # Player is now carrying trash
                     self.carrying_trash_type = trash.type  # Store the type of trash
+                    self.carrying_trash_image = trash.image  # Store the trash image
                     print(f"Trash collected! Carrying trash: {self.carrying_trash_type}")
                     return  # Exit after collecting one trash
         print("No trash collected.")
@@ -79,21 +80,15 @@ class Player(pygame.sprite.Sprite):
 
     def draw_trash_icon(self, surface):
         if self.carrying_trash:  # Only draw the icon if the player is carrying trash
-            # Create a small square icon with the color of the trash type
-            icon_size = TILE_SIZE // 4
-            icon = pygame.Surface((icon_size, icon_size))
-            if self.carrying_trash_type == 'plastic':
-                icon.fill((0, 0, 255))  # Blue for plastic
-            elif self.carrying_trash_type == 'paper':
-                icon.fill((255, 255, 0))  # Yellow for paper
-            elif self.carrying_trash_type == 'glass':
-                icon.fill((0, 255, 0))  # Green for glass
+            # Scale the trash image to a smaller size for the icon
+            icon_size = TILE_SIZE // 2
+            trash_icon = pygame.transform.scale(self.carrying_trash_image, (icon_size, icon_size))
 
             # Position the icon above the center of the screen
             screen_center_x = WINDOW_WIDTH // 2
             screen_center_y = WINDOW_HEIGHT // 2
-            icon_rect = icon.get_rect(midbottom=(screen_center_x, screen_center_y - 40))  # 40 pixels above the player
-            surface.blit(icon, icon_rect)
+            icon_rect = trash_icon.get_rect(midbottom=(screen_center_x, screen_center_y - 40))  # 40 pixels above the player
+            surface.blit(trash_icon, icon_rect)
 
     def move(self, dt):
         self.hitbox_rect.x += self.direction.x * self.speed * dt

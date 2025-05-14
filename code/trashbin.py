@@ -1,23 +1,25 @@
 from settings import *
+import pygame
 
 class TrashBin(pygame.sprite.Sprite):
     def __init__(self, pos, groups, bin_type):
         super().__init__(groups)
-        self.type = bin_type  # Type of bin: 'plastic', 'paper', or 'glass'
+        self.type = bin_type  # Type of bin: 'recycle', 'garbage', or 'compost'
 
-        # Assign color based on bin type
-        if self.type == 'plastic':
-            color = (0, 0, 255)  # Blue for plastic
-        elif self.type == 'paper':
-            color = (255, 255, 0)  # Yellow for paper
-        elif self.type == 'glass':
-            color = (0, 255, 0)  # Green for glass
+        # Load the appropriate image based on the bin type
+        if self.type == 'recycle':
+            self.image = pygame.image.load(join('images', 'bins', 'recyclebot.png')).convert_alpha()
+        elif self.type == 'garbage':
+            self.image = pygame.image.load(join('images', 'bins', 'garbagebot.png')).convert_alpha()
+        elif self.type == 'compost':
+            self.image = pygame.image.load(join('images', 'bins', 'compostbot.png')).convert_alpha()
         else:
-            color = (255, 0, 0)  # Default red (in case of an invalid type)
+            raise ValueError(f"Unknown bin type: {self.type}")
+        
+        # Scale the image to fit the tile size
+        self.image = pygame.transform.scale(self.image, (TILE_SIZE, TILE_SIZE))
 
-        # Create the bin sprite
-        self.image = pygame.Surface((TILE_SIZE, TILE_SIZE))  # Square for bin
-        self.image.fill(color)  # Fill with the assigned color
+        # Set the rect for positioning
         self.rect = self.image.get_rect(topleft=pos)
 
         # Add a hitbox for collision detection
