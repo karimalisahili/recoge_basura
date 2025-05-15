@@ -42,7 +42,12 @@ class GameServiceStub(object):
         self.WaitForGameStart = channel.unary_stream(
                 '/game.GameService/WaitForGameStart',
                 request_serializer=game__pb2.WaitRequest.SerializeToString,
-                response_deserializer=game__pb2.GameUpdate.FromString,
+                response_deserializer=game__pb2.WaitResponse.FromString,
+                _registered_method=True)
+        self.GameUpdate = channel.stream_stream(
+                '/game.GameService/GameUpdate',
+                request_serializer=game__pb2.GameUpdateRequest.SerializeToString,
+                response_deserializer=game__pb2.GameUpdateResponse.FromString,
                 _registered_method=True)
 
 
@@ -63,6 +68,13 @@ class GameServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GameUpdate(self, request_iterator, context):
+        """Actualiza el juego
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_GameServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -74,7 +86,12 @@ def add_GameServiceServicer_to_server(servicer, server):
             'WaitForGameStart': grpc.unary_stream_rpc_method_handler(
                     servicer.WaitForGameStart,
                     request_deserializer=game__pb2.WaitRequest.FromString,
-                    response_serializer=game__pb2.GameUpdate.SerializeToString,
+                    response_serializer=game__pb2.WaitResponse.SerializeToString,
+            ),
+            'GameUpdate': grpc.stream_stream_rpc_method_handler(
+                    servicer.GameUpdate,
+                    request_deserializer=game__pb2.GameUpdateRequest.FromString,
+                    response_serializer=game__pb2.GameUpdateResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -130,7 +147,34 @@ class GameService(object):
             target,
             '/game.GameService/WaitForGameStart',
             game__pb2.WaitRequest.SerializeToString,
-            game__pb2.GameUpdate.FromString,
+            game__pb2.WaitResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GameUpdate(request_iterator,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.stream_stream(
+            request_iterator,
+            target,
+            '/game.GameService/GameUpdate',
+            game__pb2.GameUpdateRequest.SerializeToString,
+            game__pb2.GameUpdateResponse.FromString,
             options,
             channel_credentials,
             insecure,

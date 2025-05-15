@@ -41,11 +41,24 @@ message WaitResponse {
   bool game_started = 4; //true cuando se puede empezar el juego
 }
 
+message Position {
+  float x = 1;
+  float y = 2;
+}
+
 message GameUpdateRequest {
-  string player_id = 1; //id del jugador
+  string player_id = 1;
+  Position position = 2;
+  string action = 3; // "move", "pickup", etc.
+}
+
+message PlayerPosition {
+  string player_id = 1;
+  Position position = 2;
 }
 
 message GameUpdateResponse {
-  map<string, string> players= 1; //mapa de todos los jugadores con sus ids y nombres
+  bool success = 1;
+  string message = 2;
+  repeated PlayerPosition players_positions = 3;
 }
-

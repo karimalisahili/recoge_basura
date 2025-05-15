@@ -3,6 +3,7 @@ import game_pb2
 import game_pb2_grpc
 import sys
 
+
 """
 Envia una solicitud de union al servidor gRPC con el nombre del jugador.
 
@@ -43,6 +44,55 @@ def wait_for_game(stub, player_id):
         print(f"[{player_id}] Error al esperar el juego: {e.code()} - {e.details()}")
     
 
+def game_update_sender(player_id):
+    """
+    Generador que envía mensajes al servidor en tiempo real.
+    Permite enviar múltiples posiciones sucesivamente.
+    """
+    while True:
+        try:
+            x_input = input("X (Enter para reintentar o salir con 'exit'): ").strip()
+            if x_input == "":
+                print("[Cliente] Entrada vacía. No se enviará posición. Intenta de nuevo.")
+                continue  # No termina, solo reintenta
+            if x_input.lower() == "exit":
+                print("[Cliente] Saliendo del juego.")
+                break
+
+            x = float(x_input)
+            y_input = input("Y: ").strip()
+            if y_input == "":
+                print("[Cliente] Y no puede estar vacío. Intenta de nuevo.")
+                continue
+            y = float(y_input)
+
+            action = input("Acción (pickup, attack, etc): ").strip()
+
+            position = game_pb2.Position(x=x, y=y)
+
+            yield game_pb2.GameUpdateRequest(
+                player_id=player_id,
+                position=position,
+                action=action
+            )
+        except ValueError:
+            print("[Cliente] Error: coordenadas inválidas. Intenta de nuevo.")
+
+
+
+def game_update(stub, player_id):
+    try:
+        responses = stub.GameUpdate(game_update_sender(player_id))  # recibe flujo de respuestas
+        for response in responses:
+            print(f"[{player_id}] Update recibido del servidor:")
+            print(f"Mensaje del servidor: {response.message}")
+            print("Otros jugadores conectados:")
+            for p in response.players_positions:
+                print(f"  ID: {p.player_id} | Posición: ({p.position.x}, {p.position.y})")
+    except grpc.RpcError as e:
+        print(f"[{player_id}] Error en GameUpdate: {e.code()} - {e.details()}")
+
+
 
 """
 Crea un canal gRPC hacia el servidor, construye el stub, 
@@ -62,6 +112,7 @@ def main():
     
     if playerId is not None:
         wait_for_game(stub, playerId)
+        game_update(stub, playerId)
     else:
         print(f"[Cliente] No se pudo unir al juego. Asegúrese de que la sala no esté llena o que la cantidad de jugadores sea correcta.")
         sys.exit()

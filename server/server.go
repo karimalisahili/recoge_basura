@@ -3,6 +3,7 @@ package main
 import (
 	pb "arcade_racing/server/protos"
 	"context"
+	"io"
 	"log"
 	"net"
 	"sync"
@@ -20,7 +21,9 @@ type server struct {
 	pb.UnimplementedGameServiceServer
 	mu                    sync.Mutex
 	players               map[string]string
+	playerPositions       map[string]*pb.Position
 	waitingPlayersStreams map[string]pb.GameService_WaitForGameStartServer
+	gameUpdateStreams     map[string]pb.GameService_GameUpdateServer
 	totalPlayersNeeded    int32
 	gameStarted           bool
 }
@@ -29,7 +32,9 @@ type server struct {
 func NewServer() *server {
 	return &server{
 		players:               make(map[string]string),
+		playerPositions:       make(map[string]*pb.Position),
 		waitingPlayersStreams: make(map[string]pb.GameService_WaitForGameStartServer),
+		gameUpdateStreams:     make(map[string]pb.GameService_GameUpdateServer),
 		totalPlayersNeeded:    0,
 		gameStarted:           false,
 	}
@@ -162,10 +167,67 @@ func (s *server) checkGameStart() {
 	}
 }
 
-//funcion que cada segundo envia un mensaje a los jugadores en el juego 
-// con un arreglo de los ids de los jugadores en el juego y 
-// y cada segundo el cada cliente le envia su id para saber que sigue 
-//en el juego y lo imprime 
+func (s *server) GameUpdate(stream pb.GameService_GameUpdateServer) error {
+	var playerId string
+
+	// Primer mensaje debe contener el ID del jugador para registrarlo
+	req, err := stream.Recv()
+	if err != nil {
+		return err
+	}
+	playerId = req.PlayerId
+
+	s.mu.Lock()
+	s.playerPositions[playerId] = req.Position
+	s.gameUpdateStreams[playerId] = stream
+	s.mu.Unlock()
+
+	log.Printf("Jugador %s inició GameUpdate", playerId)
+
+	// Inicia una gorutina para escuchar actualizaciones siguientes del jugador
+	go func() {
+		for {
+			req, err := stream.Recv()
+			if err == io.EOF || err != nil {
+				log.Printf("Jugador %s salió del stream", playerId)
+				s.mu.Lock()
+				delete(s.playerPositions, playerId)
+				delete(s.gameUpdateStreams, playerId)
+				s.mu.Unlock()
+				return
+			}
+
+			s.mu.Lock()
+			s.playerPositions[req.PlayerId] = req.Position
+
+			// Armar la lista actualizada de posiciones
+			var positions []*pb.PlayerPosition
+			for pid, pos := range s.playerPositions {
+				positions = append(positions, &pb.PlayerPosition{
+					PlayerId: pid,
+					Position: pos,
+				})
+			}
+
+			// Responder a todos los jugadores conectados
+			for pid, st := range s.gameUpdateStreams {
+				err := st.Send(&pb.GameUpdateResponse{
+					Success:          true,
+					Message:          "Update recibido",
+					PlayersPositions: positions,
+				})
+				if err != nil {
+					log.Printf("Error enviando update a %s: %v", pid, err)
+				}
+			}
+
+			s.mu.Unlock()
+		}
+	}()
+
+	// Evitar que la función termine
+	select {}
+}
 
 // main incializa y ejecuta el servidor gRPC del juego.
 //
@@ -199,5 +261,3 @@ func main() {
 		log.Fatalf("Error al servir: %v", err)
 	}
 }
-
-
