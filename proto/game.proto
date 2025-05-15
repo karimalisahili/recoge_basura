@@ -7,58 +7,38 @@ package game;
 option go_package = "/protos";
 
 service GameService {
-
-  //El jugador crea o se conecta al juego
-  rpc CreateOrJoinGame (CreateOrJoinRequest) returns (CreateOrJoinResponse);
-  
-  //El jugador se queda escuchando al servidor para saber cuando empezar
-  rpc WaitForGameStart (WaitRequest) returns (stream WaitResponse);
-
-  //Actualiza el juego
-  rpc GameUpdate (stream GameUpdateRequest
-  ) returns (stream GameUpdateResponse);
+  rpc Connect(stream PlayerAction) returns (stream GameState);
 }
 
-message CreateOrJoinRequest {
-  string name = 1; //nombre del jugador
-  int32 request_players = 2; //cuantos jugadores hay
-}
-
-message CreateOrJoinResponse {
-  string player_id = 1; //id de jugador devuelto por el servidor
-  int32 total_players_needed = 2; //el primer jugador que entra decide y el servidor manda para saber si es igual o diferente
-  bool player_joined = 3; //true si el jugador pudo unirse
-}
-
-message WaitRequest {
-  string player_id = 1; //solicitar esperar para empezar el juego
-}
-
-message WaitResponse {
-  string message = 1; //Mensaje general ("Esperando jugadores", "Comenzando el juego")
-  int32 current_players = 2; //cuantos jugadores hay conectados ahora
-  int32 total_players_needed = 3; //cuantos se necesitan para comenzar
-  bool game_started = 4; //true cuando se puede empezar el juego
-}
-
-message Position {
-  float x = 1;
-  float y = 2;
-}
-
-message GameUpdateRequest {
+message PlayerAction {
   string player_id = 1;
-  Position position = 2;
-  string action = 3; // "move", "pickup", etc.
+  ActionType action = 2;
+  Direction direction = 3;
+  optional int32 total_players = 4; // Solo usado por el primer jugador que se conecta
 }
 
-message PlayerPosition {
+enum ActionType {
+  MOVE = 0;
+  ATTACK = 1;
+  JUMP = 2;
+}
+
+enum Direction {
+  UP = 0;
+  DOWN = 1;
+  LEFT = 2;
+  RIGHT = 3;
+  NONE = 4;
+}
+
+message PlayerState {
   string player_id = 1;
-  Position position = 2;
+  int32 x = 2;
+  int32 y = 3;
 }
 
-message GameUpdateResponse {
-  bool success = 1;
-  string message = 2;
-  repeated PlayerPosition players_positions = 3;
+message GameState {
+  int32 tick = 1;
+  repeated PlayerState players = 2;
+  bool game_started = 3;
 }

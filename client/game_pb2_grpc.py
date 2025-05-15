@@ -34,43 +34,18 @@ class GameServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.CreateOrJoinGame = channel.unary_unary(
-                '/game.GameService/CreateOrJoinGame',
-                request_serializer=game__pb2.CreateOrJoinRequest.SerializeToString,
-                response_deserializer=game__pb2.CreateOrJoinResponse.FromString,
-                _registered_method=True)
-        self.WaitForGameStart = channel.unary_stream(
-                '/game.GameService/WaitForGameStart',
-                request_serializer=game__pb2.WaitRequest.SerializeToString,
-                response_deserializer=game__pb2.WaitResponse.FromString,
-                _registered_method=True)
-        self.GameUpdate = channel.stream_stream(
-                '/game.GameService/GameUpdate',
-                request_serializer=game__pb2.GameUpdateRequest.SerializeToString,
-                response_deserializer=game__pb2.GameUpdateResponse.FromString,
+        self.Connect = channel.stream_stream(
+                '/game.GameService/Connect',
+                request_serializer=game__pb2.PlayerAction.SerializeToString,
+                response_deserializer=game__pb2.GameState.FromString,
                 _registered_method=True)
 
 
 class GameServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def CreateOrJoinGame(self, request, context):
-        """El jugador crea o se conecta al juego
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def WaitForGameStart(self, request, context):
-        """El jugador se queda escuchando al servidor para saber cuando empezar
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def GameUpdate(self, request_iterator, context):
-        """Actualiza el juego
-        """
+    def Connect(self, request_iterator, context):
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -78,20 +53,10 @@ class GameServiceServicer(object):
 
 def add_GameServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'CreateOrJoinGame': grpc.unary_unary_rpc_method_handler(
-                    servicer.CreateOrJoinGame,
-                    request_deserializer=game__pb2.CreateOrJoinRequest.FromString,
-                    response_serializer=game__pb2.CreateOrJoinResponse.SerializeToString,
-            ),
-            'WaitForGameStart': grpc.unary_stream_rpc_method_handler(
-                    servicer.WaitForGameStart,
-                    request_deserializer=game__pb2.WaitRequest.FromString,
-                    response_serializer=game__pb2.WaitResponse.SerializeToString,
-            ),
-            'GameUpdate': grpc.stream_stream_rpc_method_handler(
-                    servicer.GameUpdate,
-                    request_deserializer=game__pb2.GameUpdateRequest.FromString,
-                    response_serializer=game__pb2.GameUpdateResponse.SerializeToString,
+            'Connect': grpc.stream_stream_rpc_method_handler(
+                    servicer.Connect,
+                    request_deserializer=game__pb2.PlayerAction.FromString,
+                    response_serializer=game__pb2.GameState.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -105,61 +70,7 @@ class GameService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def CreateOrJoinGame(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/game.GameService/CreateOrJoinGame',
-            game__pb2.CreateOrJoinRequest.SerializeToString,
-            game__pb2.CreateOrJoinResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def WaitForGameStart(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_stream(
-            request,
-            target,
-            '/game.GameService/WaitForGameStart',
-            game__pb2.WaitRequest.SerializeToString,
-            game__pb2.WaitResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def GameUpdate(request_iterator,
+    def Connect(request_iterator,
             target,
             options=(),
             channel_credentials=None,
@@ -172,9 +83,9 @@ class GameService(object):
         return grpc.experimental.stream_stream(
             request_iterator,
             target,
-            '/game.GameService/GameUpdate',
-            game__pb2.GameUpdateRequest.SerializeToString,
-            game__pb2.GameUpdateResponse.FromString,
+            '/game.GameService/Connect',
+            game__pb2.PlayerAction.SerializeToString,
+            game__pb2.GameState.FromString,
             options,
             channel_credentials,
             insecure,
