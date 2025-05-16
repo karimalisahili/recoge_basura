@@ -12,7 +12,21 @@ import (
 	"google.golang.org/grpc"
 )
 
-const TILE_SIZE = 64 // Usa el mismo valor que en el cliente
+const (
+	TILE_SIZE = 64 // Usa el mismo valor que en el cliente
+
+	// Límites de la colina en tiles
+	COLINA_MIN_X_TILE = 19
+	COLINA_MAX_X_TILE = 35
+	COLINA_MIN_Y_TILE = 17
+	COLINA_MAX_Y_TILE = 35
+
+	// Límites de la colina en píxeles
+	COLINA_MIN_X = COLINA_MIN_X_TILE * TILE_SIZE
+	COLINA_MAX_X = COLINA_MAX_X_TILE*TILE_SIZE - TILE_SIZE
+	COLINA_MIN_Y = COLINA_MIN_Y_TILE * TILE_SIZE
+	COLINA_MAX_Y = COLINA_MAX_Y_TILE*TILE_SIZE - TILE_SIZE
+)
 
 // server representa el servidor del juego.
 // Implementa la interfaz GameServiceServer generada desde el .proto.
@@ -203,9 +217,9 @@ func (s *server) applyAction(p *playerConn, action *pb.PlayerAction) {
 		fmt.Printf("%s atacó hacia %v\n", p.id, action.Direction)
 	}
 
-	// Limita la posición para que no salga del mapa
-	p.position.X = clamp(p.position.X, 0, 4000)
-	p.position.Y = clamp(p.position.Y, 0, 4000)
+	// Limita la posición para que no salga de la colina
+	p.position.X = clamp(p.position.X, COLINA_MIN_X, COLINA_MAX_X)
+	p.position.Y = clamp(p.position.Y, COLINA_MIN_Y, COLINA_MAX_Y)
 }
 
 func (s *server) buildGameState() *pb.GameState {

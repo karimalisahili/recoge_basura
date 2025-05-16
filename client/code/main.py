@@ -134,7 +134,14 @@ class Game:
                                 self.players_dict[p.player_id].target_pos = pygame.Vector2(p.x, p.y)
                             elif p.player_id:
                                 # Actualiza la posición objetivo para interpolación
-                                self.players_dict[p.player_id].target_pos = pygame.Vector2(p.x, p.y)
+                                new_rect = self.players_dict[p.player_id].rect.copy()
+                                new_rect.topleft = (round(p.x), round(p.y))
+                                collision = pygame.sprite.spritecollideany(
+                                    type('TempSprite', (pygame.sprite.Sprite,), {'rect': new_rect})(),
+                                    self.collision_sprites
+                                )
+                                if not collision:
+                                    self.players_dict[p.player_id].target_pos = pygame.Vector2(p.x, p.y)
             except grpc.RpcError as e:
                 print("Error de conexión gRPC:", e)
 
@@ -191,10 +198,18 @@ class Game:
                 for player_id, pos in self.players_positions.items():
                     if player_id in self.players_dict:
                         player = self.players_dict[player_id]
-                        # Actualiza la posición objetivo para interpolación
+                        # Verificar colisión ANTES de actualizar target_pos
+                        new_rect = player.rect.copy()
+                        new_rect.topleft = (round(pos[0]), round(pos[1]))
+                        collision = pygame.sprite.spritecollideany(
+                            type('TempSprite', (pygame.sprite.Sprite,), {'rect': new_rect})(),
+                            self.collision_sprites
+                        )
+                        if not collision:
+                            player.target_pos = pygame.Vector2(pos)
+                        # Actualiza la posición objetivo para interpolación SOLO si no hay colisión
                         if not hasattr(player, "interp_pos"):
                             player.interp_pos = pygame.Vector2(player.rect.topleft)
-                        player.target_pos = pygame.Vector2(pos)
                         speed = 200  # píxeles por segundo (ajusta a gusto)
                         direction = player.target_pos - player.interp_pos
                         distance = direction.length()
@@ -208,7 +223,7 @@ class Game:
                             new_rect.topleft = (round(new_interp_pos.x), round(new_interp_pos.y))
                             # Verificar colisión antes de mover
                             collision = pygame.sprite.spritecollideany(
-                                type('TempSprite', (pygame.sprite.Sprite,), {'rect': new_rect})(), 
+                                type('TempSprite', (pygame.sprite.Sprite,), {'rect': new_rect})(),
                                 self.collision_sprites
                             )
                             if not collision:
