@@ -12,6 +12,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+const TILE_SIZE = 64 // Usa el mismo valor que en el cliente
+
 // server representa el servidor del juego.
 // Implementa la interfaz GameServiceServer generada desde el .proto.
 // players es un mapa en memoria que guarda los jugadores conectados por su ID.
@@ -76,7 +78,7 @@ func (s *server) Connect(stream pb.GameService_ConnectServer) error {
 		id:       playerID,
 		stream:   stream,
 		actions:  make(chan *pb.PlayerAction, 10),
-		position: &pb.PlayerState{PlayerId: playerID, X: 22, Y: 17},
+		position: &pb.PlayerState{PlayerId: playerID, X: 22 * TILE_SIZE, Y: 17 * TILE_SIZE},
 	}
 	s.players[playerID] = player
 
@@ -89,6 +91,19 @@ func (s *server) Connect(stream pb.GameService_ConnectServer) error {
 			action, err := stream.Recv()
 			if err == io.EOF || err != nil {
 				fmt.Printf("Jugador %s desconectado.\n", playerID)
+				// Eliminar jugador desconectado
+				s.mu.Lock()
+				delete(s.players, playerID)
+				// Si ya no quedan jugadores, resetea el estado del juego
+				if len(s.players) == 0 {
+					fmt.Println("Todos los jugadores se han desconectado. Reiniciando estado del juego.")
+					s.totalPlayers = 0
+					s.gameStarted = false
+					s.tick = 0
+					s.gameStartOnce = sync.Once{}
+				}
+				s.mu.Unlock()
+				s.cond.Broadcast()
 				break
 			}
 			player.actions <- action
@@ -174,18 +189,17 @@ func (s *server) applyAction(p *playerConn, action *pb.PlayerAction) {
 	case pb.ActionType_MOVE:
 		switch action.Direction {
 		case pb.Direction_UP:
-			p.position.Y += 1
+			p.position.Y += TILE_SIZE
 		case pb.Direction_DOWN:
-			p.position.Y -= 1
+			p.position.Y -= TILE_SIZE
 		case pb.Direction_LEFT:
-			p.position.X -= 1
+			p.position.X -= TILE_SIZE
 		case pb.Direction_RIGHT:
-			p.position.X += 1
+			p.position.X += TILE_SIZE
 		}
 	case pb.ActionType_JUMP:
-		p.position.Y += 2
+		p.position.Y += 2 * TILE_SIZE
 	case pb.ActionType_ATTACK:
-		// solo ejemplo, sin lógica aún
 		fmt.Printf("%s atacó hacia %v\n", p.id, action.Direction)
 	}
 
