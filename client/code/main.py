@@ -60,12 +60,8 @@ class Game:
         for x, y, image in map.get_layer_by_name('Ground').tiles():
             Sprite((x * TILE_SIZE, y * TILE_SIZE), image, self.all_sprites)
 
-        # Quitar obstáculos: no cargar 'Objects' ni 'Collisions' como colisiones
-        # for obj in map.get_layer_by_name('Objects'):
-        #     CollisionSprite((obj.x, obj.y), obj.image, (self.all_sprites, self.collision_sprites))
-
-        # for obj in map.get_layer_by_name('Collisions'):
-        #     CollisionSprite((obj.x, obj.y), pygame.Surface((obj.width, obj.height)), self.collision_sprites)
+        for obj in map.get_layer_by_name('Collisions'):
+            CollisionSprite((obj.x, obj.y), pygame.Surface((obj.width, obj.height)), self.collision_sprites)
 
         bin_positions = [
             ((22 * TILE_SIZE, 17 * TILE_SIZE), 'recycle'),
@@ -206,7 +202,17 @@ class Game:
                             move_dist = min(speed * dt, distance)
                             if direction.length_squared() > 0:
                                 direction = direction.normalize()
-                            player.interp_pos += direction * move_dist
+                            # Calcular nueva posición tentativa
+                            new_interp_pos = player.interp_pos + direction * move_dist
+                            new_rect = player.rect.copy()
+                            new_rect.topleft = (round(new_interp_pos.x), round(new_interp_pos.y))
+                            # Verificar colisión antes de mover
+                            collision = pygame.sprite.spritecollideany(
+                                type('TempSprite', (pygame.sprite.Sprite,), {'rect': new_rect})(), 
+                                self.collision_sprites
+                            )
+                            if not collision:
+                                player.interp_pos = new_interp_pos
                         player.rect.topleft = (round(player.interp_pos.x), round(player.interp_pos.y))
 
                         # Animación según dirección
