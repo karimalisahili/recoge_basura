@@ -76,7 +76,7 @@ func (s *server) Connect(stream pb.GameService_ConnectServer) error {
 		id:       playerID,
 		stream:   stream,
 		actions:  make(chan *pb.PlayerAction, 10),
-		position: &pb.PlayerState{PlayerId: playerID, X: 0, Y: 0},
+		position: &pb.PlayerState{PlayerId: playerID, X: 22, Y: 17},
 	}
 	s.players[playerID] = player
 
@@ -127,7 +127,7 @@ func (s *server) Connect(stream pb.GameService_ConnectServer) error {
 		if err := stream.Send(state); err != nil {
 			return err
 		}
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(16 * time.Millisecond)
 	}
 }
 
@@ -140,7 +140,7 @@ func (s *server) getPlayersState() []*pb.PlayerState {
 }
 
 func (s *server) gameLoop() {
-	ticker := time.NewTicker(200 * time.Millisecond)
+	ticker := time.NewTicker(16 * time.Millisecond)
 	defer ticker.Stop()
 
 	for range ticker.C {
@@ -158,7 +158,18 @@ func (s *server) gameLoop() {
 	}
 }
 
+func clamp(val, min, max int32) int32 {
+	if val < min {
+		return min
+	}
+	if val > max {
+		return max
+	}
+	return val
+}
+
 func (s *server) applyAction(p *playerConn, action *pb.PlayerAction) {
+	log.Printf("Jugador %s realizó acción: %v\n", p.id, action)
 	switch action.Action {
 	case pb.ActionType_MOVE:
 		switch action.Direction {
@@ -177,6 +188,10 @@ func (s *server) applyAction(p *playerConn, action *pb.PlayerAction) {
 		// solo ejemplo, sin lógica aún
 		fmt.Printf("%s atacó hacia %v\n", p.id, action.Direction)
 	}
+
+	// Limita la posición para que no salga del mapa
+	p.position.X = clamp(p.position.X, 0, 4000)
+	p.position.Y = clamp(p.position.Y, 0, 4000)
 }
 
 func (s *server) buildGameState() *pb.GameState {

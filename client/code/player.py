@@ -51,6 +51,7 @@ class Player(pygame.sprite.Sprite):
             self.dispose_trash()
 
     def collect_trash(self):
+        
         for trash in self.trash_group:
             if isinstance(trash, Trash):  # Ensure the object is a Trash instance
                 if self.hitbox_rect.colliderect(trash.hitbox_rect):
