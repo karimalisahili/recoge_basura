@@ -19,14 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	GameService_JoinGame_FullMethodName = "/game.GameService/JoinGame"
+	GameService_Connect_FullMethodName = "/game.GameService/Connect"
 )
 
 // GameServiceClient is the client API for GameService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GameServiceClient interface {
-	JoinGame(ctx context.Context, in *JoinRequest, opts ...grpc.CallOption) (*JoinResponse, error)
+	Connect(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[PlayerAction, GameState], error)
 }
 
 type gameServiceClient struct {
@@ -37,21 +37,24 @@ func NewGameServiceClient(cc grpc.ClientConnInterface) GameServiceClient {
 	return &gameServiceClient{cc}
 }
 
-func (c *gameServiceClient) JoinGame(ctx context.Context, in *JoinRequest, opts ...grpc.CallOption) (*JoinResponse, error) {
+func (c *gameServiceClient) Connect(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[PlayerAction, GameState], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(JoinResponse)
-	err := c.cc.Invoke(ctx, GameService_JoinGame_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &GameService_ServiceDesc.Streams[0], GameService_Connect_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &grpc.GenericClientStream[PlayerAction, GameState]{ClientStream: stream}
+	return x, nil
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GameService_ConnectClient = grpc.BidiStreamingClient[PlayerAction, GameState]
 
 // GameServiceServer is the server API for GameService service.
 // All implementations must embed UnimplementedGameServiceServer
 // for forward compatibility.
 type GameServiceServer interface {
-	JoinGame(context.Context, *JoinRequest) (*JoinResponse, error)
+	Connect(grpc.BidiStreamingServer[PlayerAction, GameState]) error
 	mustEmbedUnimplementedGameServiceServer()
 }
 
@@ -62,8 +65,8 @@ type GameServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedGameServiceServer struct{}
 
-func (UnimplementedGameServiceServer) JoinGame(context.Context, *JoinRequest) (*JoinResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method JoinGame not implemented")
+func (UnimplementedGameServiceServer) Connect(grpc.BidiStreamingServer[PlayerAction, GameState]) error {
+	return status.Errorf(codes.Unimplemented, "method Connect not implemented")
 }
 func (UnimplementedGameServiceServer) mustEmbedUnimplementedGameServiceServer() {}
 func (UnimplementedGameServiceServer) testEmbeddedByValue()                     {}
@@ -86,23 +89,12 @@ func RegisterGameServiceServer(s grpc.ServiceRegistrar, srv GameServiceServer) {
 	s.RegisterService(&GameService_ServiceDesc, srv)
 }
 
-func _GameService_JoinGame_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(JoinRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GameServiceServer).JoinGame(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: GameService_JoinGame_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GameServiceServer).JoinGame(ctx, req.(*JoinRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+func _GameService_Connect_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GameServiceServer).Connect(&grpc.GenericServerStream[PlayerAction, GameState]{ServerStream: stream})
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GameService_ConnectServer = grpc.BidiStreamingServer[PlayerAction, GameState]
 
 // GameService_ServiceDesc is the grpc.ServiceDesc for GameService service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -110,12 +102,14 @@ func _GameService_JoinGame_Handler(srv interface{}, ctx context.Context, dec fun
 var GameService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "game.GameService",
 	HandlerType: (*GameServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "JoinGame",
-			Handler:    _GameService_JoinGame_Handler,
+			StreamName:    "Connect",
+			Handler:       _GameService_Connect_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "proto/game.proto",
 }

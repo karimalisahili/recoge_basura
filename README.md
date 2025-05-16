@@ -1,4 +1,4 @@
-# Arcade Racing 
+# Recoge basura
 
 ## Servidor Go grcp
 

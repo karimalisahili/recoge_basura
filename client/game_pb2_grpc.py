@@ -34,17 +34,17 @@ class GameServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.JoinGame = channel.unary_unary(
-                '/game.GameService/JoinGame',
-                request_serializer=game__pb2.JoinRequest.SerializeToString,
-                response_deserializer=game__pb2.JoinResponse.FromString,
+        self.Connect = channel.stream_stream(
+                '/game.GameService/Connect',
+                request_serializer=game__pb2.PlayerAction.SerializeToString,
+                response_deserializer=game__pb2.GameState.FromString,
                 _registered_method=True)
 
 
 class GameServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def JoinGame(self, request, context):
+    def Connect(self, request_iterator, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -53,10 +53,10 @@ class GameServiceServicer(object):
 
 def add_GameServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'JoinGame': grpc.unary_unary_rpc_method_handler(
-                    servicer.JoinGame,
-                    request_deserializer=game__pb2.JoinRequest.FromString,
-                    response_serializer=game__pb2.JoinResponse.SerializeToString,
+            'Connect': grpc.stream_stream_rpc_method_handler(
+                    servicer.Connect,
+                    request_deserializer=game__pb2.PlayerAction.FromString,
+                    response_serializer=game__pb2.GameState.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -70,7 +70,7 @@ class GameService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def JoinGame(request,
+    def Connect(request_iterator,
             target,
             options=(),
             channel_credentials=None,
@@ -80,12 +80,12 @@ class GameService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
+        return grpc.experimental.stream_stream(
+            request_iterator,
             target,
-            '/game.GameService/JoinGame',
-            game__pb2.JoinRequest.SerializeToString,
-            game__pb2.JoinResponse.FromString,
+            '/game.GameService/Connect',
+            game__pb2.PlayerAction.SerializeToString,
+            game__pb2.GameState.FromString,
             options,
             channel_credentials,
             insecure,

@@ -7,14 +7,38 @@ package game;
 option go_package = "/protos";
 
 service GameService {
-  rpc JoinGame (JoinRequest) returns (JoinResponse);
+  rpc Connect(stream PlayerAction) returns (stream GameState);
 }
 
-message JoinRequest {
-  string name = 1;
+message PlayerAction {
+  string player_id = 1;
+  ActionType action = 2;
+  Direction direction = 3;
+  optional int32 total_players = 4; // Solo usado por el primer jugador que se conecta
 }
 
-message JoinResponse {
-  string id = 1;
-  string message = 2;
+enum ActionType {
+  MOVE = 0;
+  ATTACK = 1;
+  JUMP = 2;
+}
+
+enum Direction {
+  UP = 0;
+  DOWN = 1;
+  LEFT = 2;
+  RIGHT = 3;
+  NONE = 4;
+}
+
+message PlayerState {
+  string player_id = 1;
+  int32 x = 2;
+  int32 y = 3;
+}
+
+message GameState {
+  int32 tick = 1;
+  repeated PlayerState players = 2;
+  bool game_started = 3;
 }
