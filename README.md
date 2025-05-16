@@ -30,11 +30,16 @@ python -m grpc_tools.protoc -I=proto --python_out=client --grpc_python_out=clien
 
 ```
 
-### Correr el servidor 
+### Correr el cliente 
 
-Desde la raiz (arcade_racing) ejecutar.
+#### Desde la raiz (arcade_racing) ejecutar.
 ```bash
 python client/client.py
+```
+
+#### Desde la raiz (arcade_racing) ejecutar.
+```bash
+python client/code/main.py
 ```
 
 
@@ -46,6 +51,10 @@ python client/client.py
 pip freeze > requirements.txt
 ```
 2. Para instalar dependencias
+
+```bash
+cd client
+```
 
 ```bash
 pip install -r requirements.txt
