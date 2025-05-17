@@ -118,7 +118,7 @@ def show_game_over(display_surface, scores_dict):
         winners = []
         max_score = 0
 
-    options = ["Volver al menú principal", "Jugar de nuevo"]
+    options = ["Volver al menú principal"]
     selected = 0
 
     while running:
