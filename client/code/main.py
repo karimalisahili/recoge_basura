@@ -184,6 +184,11 @@ class Game:
                                 self.score_message = f"+{player.score - self.last_score} puntos!"
                                 self.score_message_time = time.time()
                                 self.last_score = player.score
+                                # Limpiar atributos de basura cargada al depositar y ganar puntos
+                                player.carrying_trash = False
+                                player.carrying_trash_type = None
+                                player.carrying_trash_id = None
+                                player.carrying_trash_image = None
                         # Si el jugador tiene una basura cargada (no está en trash_dict pero tiene carrying_trash_id)
                         if hasattr(player, "carrying_trash_id") and player.carrying_trash_id:
                             if player.carrying_trash_id not in self.trash_dict:

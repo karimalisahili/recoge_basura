@@ -18,7 +18,7 @@ class Player(pygame.sprite.Sprite):
     
         # movement 
         self.direction = pygame.Vector2()
-        self.speed = 500
+        self.speed = 700
         self.collision_sprites = collision_sprites
 
         # trash collection
@@ -60,7 +60,7 @@ class Player(pygame.sprite.Sprite):
         pass
 
     def draw_trash_icon(self, surface):
-        if self.carrying_trash and hasattr(self, "carrying_trash_image"):
+        if self.carrying_trash and hasattr(self, "carrying_trash_image") and self.carrying_trash_image is not None:
             icon_size = TILE_SIZE // 2
             trash_icon = pygame.transform.scale(self.carrying_trash_image, (icon_size, icon_size))
             # Dibuja el ícono sobre el jugador (no en el centro de la pantalla)
