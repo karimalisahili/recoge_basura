@@ -55,4 +55,5 @@ message GameState {
   bool game_started = 3;
   repeated TrashState trash = 4; // Nuevo: lista de basuras activas
   map<string, int32> scores = 5; // Nuevo: puntajes por jugador
+  bool game_finished = 6; // Nuevo campo para sincronizar el final del juego
 }
