@@ -17,7 +17,7 @@ import pygame
 from os.path import join, dirname
 import uuid
 
-DEBUG_DRAW_HITBOX = True  # Activa el dibujo de hitboxes
+DEBUG_DRAW_HITBOX = False  # Activa el dibujo de hitboxes
 
 SOUNDS_PATH = join(dirname(dirname(__file__)), 'sound')
 
