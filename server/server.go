@@ -27,6 +27,8 @@ const (
 	COLINA_MAX_X = COLINA_MAX_X_TILE*TILE_SIZE - TILE_SIZE
 	COLINA_MIN_Y = COLINA_MIN_Y_TILE * TILE_SIZE
 	COLINA_MAX_Y = COLINA_MAX_Y_TILE*TILE_SIZE - TILE_SIZE
+
+	INITIAL_TRASH_COUNT = 10 // <--- Cambia este valor para la cantidad de basura inicial
 )
 
 type TrashState struct {
@@ -113,19 +115,26 @@ func (s *server) Connect(stream pb.GameService_ConnectServer) error {
 
 	// Inicializa la basura solo una vez al inicio de la partida
 	if len(s.players) == 1 && len(s.trash) == 0 {
-		// Crea 10 basuras aleatorias
+		// Crea INITIAL_TRASH_COUNT basuras aleatorias
 		trashTypes := []string{"recycle", "garbage", "compost"}
 		trashImages := map[string][]string{
 			"recycle": {"botella.png", "lata.png", "vidrio.png", "marcadores.png"},
 			"garbage": {"caja-pizza.png", "curita.png", "hueso.png", "utensilios.png"},
 			"compost": {"manzana.png", "cascara.png", "huevo.png", "carton.png"},
 		}
-		for i := 0; i < 10; i++ {
+		// Calcula los rangos válidos para x e y en tiles
+		xTileMin := COLINA_MIN_X_TILE + 1
+		xTileMax := COLINA_MAX_X_TILE
+		yTileMin := COLINA_MIN_Y_TILE + 3
+		yTileMax := COLINA_MAX_Y_TILE
+		for i := 0; i < INITIAL_TRASH_COUNT; i++ {
 			typ := trashTypes[rand.Intn(len(trashTypes))]
 			imgs := trashImages[typ]
 			img := imgs[rand.Intn(len(imgs))]
-			x := int32(19+rand.Intn(17)) * TILE_SIZE // 19..35 inclusive
-			y := int32(18+rand.Intn(18)) * TILE_SIZE // 18..35 inclusive
+			xTile := int32(xTileMin + rand.Intn(int(xTileMax-xTileMin+1))) // Incluye ambos extremos
+			yTile := int32(yTileMin + rand.Intn(int(yTileMax-yTileMin+1)))
+			x := xTile * TILE_SIZE
+			y := yTile * TILE_SIZE
 			id := fmt.Sprintf("trash_%d", i)
 			s.trash[id] = &TrashState{
 				ID:    id,

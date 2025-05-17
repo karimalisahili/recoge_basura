@@ -237,29 +237,33 @@ class Game:
                     if event.key == pygame.K_SPACE:
                         if self.local_player_id and self.local_player_id in self.players_dict:
                             player = self.players_dict[self.local_player_id]
-                            found = False
-                            for trash in list(self.trash_dict.values()):
-                                print(f"[DEBUG] Player hitbox: {player.hitbox_rect} Trash hitbox: {trash.hitbox_rect}")
-                                if player.hitbox_rect.colliderect(trash.hitbox_rect):
-                                    dx = player.rect.centerx - trash.rect.centerx
-                                    dy = player.rect.centery - trash.rect.centery
-                                    dist = (dx**2 + dy**2) ** 0.5
-                                    print(f"[TRASH] Intentando recoger basura {trash.id} tipo {trash.type} en {trash.rect.topleft} (jugador en {player.rect.topleft}) dist={dist:.1f}")
-                                    print(f"[TRASH] ¡Colisión detectada con basura {trash.id}!")
-                                    print(f"[TRASH] Enviando pickup_trash_id={trash.id} al servidor")
-                                    # SIEMPRE envía la petición al servidor
-                                    self.pending_actions.append((
-                                        game_pb2.MOVE, game_pb2.NONE, trash.id
-                                    ))
-                                    # Marca el intento de cargar, pero solo muestra el ícono si la basura ya no está en trash_dict
-                                    player.carrying_trash_id = trash.id
-                                    player.carrying_trash_type = trash.type
-                                    player.carrying_trash_image = trash.image
-                                    found = True
-                                    break
-                            if not found:
-                                print("[TRASH] No hay colisión con ninguna basura.")
-                            # No marques carrying_trash aquí, solo cuando la basura desaparezca
+                            # Solo permite recoger si NO está cargando basura
+                            if not getattr(player, "carrying_trash", False):
+                                found = False
+                                for trash in list(self.trash_dict.values()):
+                                    print(f"[DEBUG] Player hitbox: {player.hitbox_rect} Trash hitbox: {trash.hitbox_rect}")
+                                    if player.hitbox_rect.colliderect(trash.hitbox_rect):
+                                        dx = player.rect.centerx - trash.rect.centerx
+                                        dy = player.rect.centery - trash.rect.centery
+                                        dist = (dx**2 + dy**2) ** 0.5
+                                        print(f"[TRASH] Intentando recoger basura {trash.id} tipo {trash.type} en {trash.rect.topleft} (jugador en {player.rect.topleft}) dist={dist:.1f}")
+                                        print(f"[TRASH] ¡Colisión detectada con basura {trash.id}!")
+                                        print(f"[TRASH] Enviando pickup_trash_id={trash.id} al servidor")
+                                        # SIEMPRE envía la petición al servidor
+                                        self.pending_actions.append((
+                                            game_pb2.MOVE, game_pb2.NONE, trash.id
+                                        ))
+                                        # Marca el intento de cargar, pero solo muestra el ícono si la basura ya no está en trash_dict
+                                        player.carrying_trash_id = trash.id
+                                        player.carrying_trash_type = trash.type
+                                        player.carrying_trash_image = trash.image
+                                        found = True
+                                        break
+                                if not found:
+                                    print("[TRASH] No hay colisión con ninguna basura.")
+                                # No marques carrying_trash aquí, solo cuando la basura desaparezca
+                            else:
+                                print("[TRASH] Ya estás cargando basura, deposítala antes de recoger otra.")
                     if event.key == pygame.K_e:
                         if self.local_player_id and self.local_player_id in self.players_dict:
                             player = self.players_dict[self.local_player_id]
