@@ -118,6 +118,9 @@ def show_game_over(display_surface, scores_dict):
         winners = []
         max_score = 0
 
+    options = ["Volver al menú principal", "Jugar de nuevo"]
+    selected = 0
+
     while running:
         display_surface.fill((30, 30, 30))
         title = font.render("¡Juego Terminado!", True, (255, 255, 255))
@@ -142,24 +145,36 @@ def show_game_over(display_surface, scores_dict):
         winner_rect = winner_text.get_rect(center=(display_surface.get_width() // 2, y + 30))
         display_surface.blit(winner_text, winner_rect)
 
-        # Añade el texto para volver al menú principal
-        esc_text = small_font.render("Presiona ESC para volver al menú principal", True, (200, 200, 200))
-        esc_rect = esc_text.get_rect(center=(display_surface.get_width() // 2, display_surface.get_height() - 60))
-        display_surface.blit(esc_text, esc_rect)
+        # Opciones de menú
+        options_y = y + 80
+        for i, option in enumerate(options):
+            color = (255, 255, 0) if i == selected else (200, 200, 200)
+            opt_text = small_font.render(option, True, color)
+            opt_rect = opt_text.get_rect(center=(display_surface.get_width() // 2, options_y + i * 50))
+            display_surface.blit(opt_text, opt_rect)
 
         pygame.display.update()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                running = False
-
+                return "exit"
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    selected = (selected - 1) % len(options)
+                elif event.key == pygame.K_DOWN:
+                    selected = (selected + 1) % len(options)
+                elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                    if selected == 0:
+                        return "menu"
+                    elif selected == 1:
+                        return "play_again"
+                elif event.key == pygame.K_ESCAPE:
+                    return "menu"
 
 class Game:
     def __init__(self):
         pygame.init()
-        self.game_started = False # ojito
-        self.game_finished = False  # Nuevo
+        self.game_started = False
+        self.game_finished = False
         self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption('Recoge basura')
         self.clock = pygame.time.Clock()
@@ -260,8 +275,10 @@ class Game:
 
             try:
                 for game_state in stub.Connect(action_stream()):
+                    if not self.grpc_running:
+                        break  # Sale del bucle si se pide terminar el stream
                     self.game_started = getattr(game_state, "game_started", False)
-                    self.game_finished = getattr(game_state, "game_finished", False)  # <-- Nuevo
+                    self.game_finished = getattr(game_state, "game_finished", False)
                     tick = getattr(game_state, 'tick', None)
                     # print(f"[gRPC] Tick recibido: {tick if tick is not None else 'N/A'}")
                     # Actualiza las posiciones de todos los jugadores
@@ -338,8 +355,15 @@ class Game:
 
             except grpc.RpcError as e:
                 print("Error de conexión gRPC:", e)
+        self.grpc_running = True
         self.grpc_thread = threading.Thread(target=grpc_loop, daemon=True)
         self.grpc_thread.start()
+
+    def stop_grpc_client(self):
+        self.grpc_running = False
+        # Espera a que el hilo termine (máximo 1 segundo)
+        if self.grpc_thread and self.grpc_thread.is_alive():
+            self.grpc_thread.join(timeout=1)
 
     def send_movement(self):
         if not self.keys_pressed:
@@ -538,18 +562,26 @@ class Game:
             # Terminar solo cuando el servidor indique que el juego terminó
             if getattr(self, "game_finished", False):
                 scores = {pid: getattr(player, "score", 0) for pid, player in self.players_dict.items()}
-                show_game_over(self.display_surface, scores)
-                self.running = False
-                break
+                self.stop_grpc_client()  # <-- Detén el stream antes de salir
+                return scores
 
             pygame.display.flip()
 
+        self.stop_grpc_client()  # <-- Detén el stream si se sale por cualquier motivo
         pygame.quit()
 
 
 if __name__ == '__main__':
     pygame.init()
     display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-    show_menu(display_surface)
-    game = Game()
-    game.run()
+    while True:
+        show_menu(display_surface)
+        game = Game()
+        scores = game.run()
+        action = show_game_over(display_surface, scores)
+        if action == "menu":
+            continue  # vuelve al menú principal (el stream ya está cerrado)
+        elif action == "play_again":
+            continue  # vuelve a iniciar el juego
+        else:
+            break  # salir del juego
