@@ -361,6 +361,7 @@ type GameState struct {
 	GameStarted   bool                   `protobuf:"varint,3,opt,name=game_started,json=gameStarted,proto3" json:"game_started,omitempty"`
 	Trash         []*TrashState          `protobuf:"bytes,4,rep,name=trash,proto3" json:"trash,omitempty"`                                                                              // Nuevo: lista de basuras activas
 	Scores        map[string]int32       `protobuf:"bytes,5,rep,name=scores,proto3" json:"scores,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Nuevo: puntajes por jugador
+	GameFinished  bool                   `protobuf:"varint,6,opt,name=game_finished,json=gameFinished,proto3" json:"game_finished,omitempty"`                                           // Nuevo campo para sincronizar el final del juego
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -430,6 +431,13 @@ func (x *GameState) GetScores() map[string]int32 {
 	return nil
 }
 
+func (x *GameState) GetGameFinished() bool {
+	if x != nil {
+		return x.GameFinished
+	}
+	return false
+}
+
 var File_proto_game_proto protoreflect.FileDescriptor
 
 const file_proto_game_proto_rawDesc = "" +
@@ -457,13 +465,14 @@ const file_proto_game_proto_rawDesc = "" +
 	"\x01x\x18\x02 \x01(\x05R\x01x\x12\f\n" +
 	"\x01y\x18\x03 \x01(\x05R\x01y\x12\x12\n" +
 	"\x04type\x18\x04 \x01(\tR\x04type\x12\x14\n" +
-	"\x05image\x18\x05 \x01(\tR\x05image\"\x87\x02\n" +
+	"\x05image\x18\x05 \x01(\tR\x05image\"\xac\x02\n" +
 	"\tGameState\x12\x12\n" +
 	"\x04tick\x18\x01 \x01(\x05R\x04tick\x12+\n" +
 	"\aplayers\x18\x02 \x03(\v2\x11.game.PlayerStateR\aplayers\x12!\n" +
 	"\fgame_started\x18\x03 \x01(\bR\vgameStarted\x12&\n" +
 	"\x05trash\x18\x04 \x03(\v2\x10.game.TrashStateR\x05trash\x123\n" +
-	"\x06scores\x18\x05 \x03(\v2\x1b.game.GameState.ScoresEntryR\x06scores\x1a9\n" +
+	"\x06scores\x18\x05 \x03(\v2\x1b.game.GameState.ScoresEntryR\x06scores\x12#\n" +
+	"\rgame_finished\x18\x06 \x01(\bR\fgameFinished\x1a9\n" +
 	"\vScoresEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01*,\n" +

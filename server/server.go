@@ -28,7 +28,7 @@ const (
 	COLINA_MIN_Y = COLINA_MIN_Y_TILE * TILE_SIZE
 	COLINA_MAX_Y = COLINA_MAX_Y_TILE*TILE_SIZE - TILE_SIZE
 
-	INITIAL_TRASH_COUNT = 10 // <--- Cambia este valor para la cantidad de basura inicial
+	INITIAL_TRASH_COUNT = 2 // <--- Cambia este valor para la cantidad de basura inicial
 )
 
 type TrashState struct {
@@ -298,6 +298,7 @@ func (s *server) applyAction(p *playerConn, action *pb.PlayerAction) {
 		fmt.Printf("[DEBUG] DepositTrashId recibido: %s, binType: %s\n", trashID, binType)
 		// Permite depositar si el jugador está cargando esa basura y el tipo coincide
 		if p.carryingTrashID == trashID && p.carryingTrashType == binType {
+			// Suma el puntaje ANTES de limpiar el estado
 			s.scores[p.id] += 100
 			fmt.Printf("[TRASH] Jugador %s depositó basura %s en bin %s (+100 puntos, total=%d)\n", p.id, trashID, binType, s.scores[p.id])
 			p.carryingTrashID = ""
@@ -314,10 +315,13 @@ func (s *server) applyAction(p *playerConn, action *pb.PlayerAction) {
 
 func (s *server) buildGameState() *pb.GameState {
 	players := make([]*pb.PlayerState, 0, len(s.players))
+	anyCarrying := false
 	for _, p := range s.players {
 		players = append(players, p.position)
+		if p.carryingTrashID != "" {
+			anyCarrying = true
+		}
 	}
-	// Nuevo: agrega la basura al estado
 	trashList := make([]*pb.TrashState, 0, len(s.trash))
 	for _, t := range s.trash {
 		trashList = append(trashList, &pb.TrashState{
@@ -325,21 +329,28 @@ func (s *server) buildGameState() *pb.GameState {
 			X:     t.X,
 			Y:     t.Y,
 			Type:  t.Type,
-			Image: t.Image, // Nuevo: envía el nombre de la imagen
+			Image: t.Image,
 		})
 	}
-	// Nuevo: agrega los puntajes al estado
 	scores := make(map[string]int32)
 	for pid, score := range s.scores {
 		scores[pid] = score
 	}
 
+	gameFinished := false
+	// Si no hay basura y nadie está cargando, pero algún jugador acaba de depositar la última basura,
+	// asegúrate de sumar el puntaje antes de terminar el juego.
+	if len(s.trash) == 0 && !anyCarrying && s.gameStarted {
+		gameFinished = true
+	}
+
 	return &pb.GameState{
-		Tick:        s.tick,
-		Players:     players,
-		GameStarted: true,
-		Trash:       trashList,
-		Scores:      scores, // Nuevo
+		Tick:         s.tick,
+		Players:      players,
+		GameStarted:  true,
+		Trash:        trashList,
+		Scores:       scores,
+		GameFinished: gameFinished,
 	}
 }
 

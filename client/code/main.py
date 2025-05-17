@@ -116,7 +116,12 @@ def show_game_over(display_surface, scores_dict):
 
     # Ordena los puntajes de mayor a menor
     sorted_scores = sorted(scores_dict.items(), key=lambda x: x[1], reverse=True)
-    winner = sorted_scores[0][0] if sorted_scores else None
+    if sorted_scores:
+        max_score = sorted_scores[0][1]
+        winners = [name for name, score in sorted_scores if score == max_score]
+    else:
+        winners = []
+        max_score = 0
 
     while running:
         display_surface.fill((30, 30, 30))
@@ -126,13 +131,19 @@ def show_game_over(display_surface, scores_dict):
 
         y = 180
         for i, (name, score) in enumerate(sorted_scores):
-            color = (0, 255, 0) if name == winner else (255, 255, 255)
+            color = (0, 255, 0) if score == max_score else (255, 255, 255)
             text = small_font.render(f"{name}: {score}", True, color)
             text_rect = text.get_rect(center=(display_surface.get_width() // 2, y))
             display_surface.blit(text, text_rect)
             y += 50
 
-        winner_text = small_font.render(f"Ganador: {winner}", True, (255, 215, 0))
+        # Mostrar empate si hay más de un ganador
+        if len(winners) > 1:
+            winner_text = small_font.render(f"Empate entre: {', '.join(winners)}", True, (255, 215, 0))
+        elif winners:
+            winner_text = small_font.render(f"Ganador: {winners[0]}", True, (255, 215, 0))
+        else:
+            winner_text = small_font.render("Sin ganadores", True, (255, 215, 0))
         winner_rect = winner_text.get_rect(center=(display_surface.get_width() // 2, y + 30))
         display_surface.blit(winner_text, winner_rect)
 
@@ -154,6 +165,7 @@ class Game:
         pygame.init()
         pygame.mixer.init()
         self.game_started = False # ojito
+        self.game_finished = False  # Nuevo
         self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption('Recoge basura')
         self.clock = pygame.time.Clock()
@@ -254,7 +266,8 @@ class Game:
 
             try:
                 for game_state in stub.Connect(action_stream()):
-                    self.game_started = getattr(game_state, "game_started", False) #ojito
+                    self.game_started = getattr(game_state, "game_started", False)
+                    self.game_finished = getattr(game_state, "game_finished", False)  # <-- Nuevo
                     tick = getattr(game_state, 'tick', None)
                     # print(f"[gRPC] Tick recibido: {tick if tick is not None else 'N/A'}")
                     # Actualiza las posiciones de todos los jugadores
@@ -529,7 +542,12 @@ class Game:
             elif self.score_message and (time.time() - self.score_message_time >= 2):
                 self.score_message = ""
 
-           
+            # Terminar solo cuando el servidor indique que el juego terminó
+            if getattr(self, "game_finished", False):
+                scores = {pid: getattr(player, "score", 0) for pid, player in self.players_dict.items()}
+                show_game_over(self.display_surface, scores)
+                self.running = False
+                break
 
             pygame.display.flip()
 
