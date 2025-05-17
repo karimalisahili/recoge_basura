@@ -8,7 +8,7 @@ class AllSprites(pygame.sprite.Group):
     
     def draw(self, target_pos):
         zoom = 0.65
-        # Adjust the camera offset
+        # Adjust the camera offset (shift focus downward by 80 pixels)
         self.offset.x = -(target_pos[0] - (WINDOW_WIDTH / 2) / zoom)
         self.offset.y = -(target_pos[1] - (WINDOW_HEIGHT / 2) / zoom)
 

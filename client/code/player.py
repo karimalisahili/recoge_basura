@@ -61,7 +61,7 @@ class Player(pygame.sprite.Sprite):
 
     def draw_trash_icon(self, surface):
         if self.carrying_trash and hasattr(self, "carrying_trash_image") and self.carrying_trash_image is not None:
-            icon_size = TILE_SIZE // 2
+            icon_size = TILE_SIZE
             trash_icon = pygame.transform.scale(self.carrying_trash_image, (icon_size, icon_size))
             # Dibuja el ícono sobre el jugador (no en el centro de la pantalla)
             icon_rect = trash_icon.get_rect(midbottom=(self.rect.centerx, self.rect.top - 10))

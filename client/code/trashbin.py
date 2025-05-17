@@ -17,7 +17,7 @@ class TrashBin(pygame.sprite.Sprite):
             raise ValueError(f"Unknown bin type: {self.type}")
         
         # Scale the image to fit the tile size
-        self.image = pygame.transform.scale(self.image, (TILE_SIZE, TILE_SIZE))
+        self.image = pygame.transform.scale(self.image, (int(TILE_SIZE* 1.5), int(TILE_SIZE*1.5)))
 
         # Set the rect for positioning
         self.rect = self.image.get_rect(topleft=pos)
