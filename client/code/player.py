@@ -11,6 +11,7 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.image.load(join('images', 'player', 'down', '0.png')).convert_alpha()
         self.rect = self.image.get_rect(center = pos)
         self.hitbox_rect = self.rect.inflate(-60, -90)
+        self.hitbox_rect.center = self.rect.center  # <-- Centra el hitbox respecto al sprite
 
         # Score
         self.score = 0
@@ -51,52 +52,34 @@ class Player(pygame.sprite.Sprite):
             self.dispose_trash()
 
     def collect_trash(self):
-        
-        for trash in self.trash_group:
-            if isinstance(trash, Trash):  # Ensure the object is a Trash instance
-                if self.hitbox_rect.colliderect(trash.hitbox_rect):
-                    print(f"Collision detected with trash at {trash.rect.topleft}")
-                    trash.kill()  # Remove the trash from the game
-                    self.carrying_trash = True  # Player is now carrying trash
-                    self.carrying_trash_type = trash.type  # Store the type of trash
-                    self.carrying_trash_image = trash.image  # Store the trash image
-                    print(f"Trash collected! Carrying trash: {self.carrying_trash_type}")
-                    return  # Exit after collecting one trash
-        print("No trash collected.")
+        # Ya no se recoge basura localmente, se hace por sincronización del servidor
+        pass
 
     def dispose_trash(self):
-        for bin in self.trash_group:
-            if isinstance(bin, TrashBin) and self.hitbox_rect.colliderect(bin.hitbox_rect):
-                if self.carrying_trash:
-                    if bin.type == self.carrying_trash_type:
-                        print(f"Disposed of {self.carrying_trash_type} trash in the correct bin!")
-                        self.carrying_trash = False
-                        self.carrying_trash_type = None
-                        self.score += 100  # Add points for correct disposal
-
-                        PointIndicator(self.rect.center, 100, self.groups()[0])  # Add to the same group as the player
-                        return
-                    else:
-                        print(f"Wrong bin! This is a {bin.type} bin.")
+        # Ya no se usa aquí, la lógica está en main.py
+        pass
 
     def draw_trash_icon(self, surface):
-        if self.carrying_trash:  # Only draw the icon if the player is carrying trash
-            # Scale the trash image to a smaller size for the icon
+        if self.carrying_trash and hasattr(self, "carrying_trash_image"):
             icon_size = TILE_SIZE // 2
             trash_icon = pygame.transform.scale(self.carrying_trash_image, (icon_size, icon_size))
-
-            # Position the icon above the center of the screen
-            screen_center_x = WINDOW_WIDTH // 2
-            screen_center_y = WINDOW_HEIGHT // 2
-            icon_rect = trash_icon.get_rect(midbottom=(screen_center_x, screen_center_y - 40))  # 40 pixels above the player
+            # Dibuja el ícono sobre el jugador (no en el centro de la pantalla)
+            icon_rect = trash_icon.get_rect(midbottom=(self.rect.centerx, self.rect.top - 10))
             surface.blit(trash_icon, icon_rect)
 
     def move(self, dt):
-        self.hitbox_rect.x += self.direction.x * self.speed * dt
+        # Calcula el desplazamiento
+        dx = self.direction.x * self.speed * dt
+        dy = self.direction.y * self.speed * dt
+
+        # Mueve el rect principal
+        self.rect.x += dx
         self.collision('horizontal')
-        self.hitbox_rect.y += self.direction.y * self.speed * dt
+        self.rect.y += dy
         self.collision('vertical')
-        self.rect.center = self.hitbox_rect.center
+
+        # Centra el hitbox respecto al rect después de mover
+        self.hitbox_rect.center = self.rect.center
 
     def collision(self, direction):
         for sprite in self.collision_sprites:

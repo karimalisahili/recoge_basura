@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"sync"
 	"time"
@@ -28,6 +29,14 @@ const (
 	COLINA_MAX_Y = COLINA_MAX_Y_TILE*TILE_SIZE - TILE_SIZE
 )
 
+type TrashState struct {
+	ID    string
+	X     int32
+	Y     int32
+	Type  string
+	Image string // Nuevo: nombre de la imagen
+}
+
 // server representa el servidor del juego.
 // Implementa la interfaz GameServiceServer generada desde el .proto.
 // players es un mapa en memoria que guarda los jugadores conectados por su ID.
@@ -48,11 +57,13 @@ type server struct {
 	tick          int32
 	gameStartOnce sync.Once
 	cond          *sync.Cond
+	trash         map[string]*TrashState // Nuevo: mapa de basura activa
 }
 
 func newServer() *server {
 	s := &server{
 		players: make(map[string]*playerConn),
+		trash:   make(map[string]*TrashState), // Inicializa el mapa de basura
 	}
 	s.cond = sync.NewCond(&s.mu)
 	return s
@@ -96,6 +107,33 @@ func (s *server) Connect(stream pb.GameService_ConnectServer) error {
 	}
 	s.players[playerID] = player
 
+	// Inicializa la basura solo una vez al inicio de la partida
+	if len(s.players) == 1 && len(s.trash) == 0 {
+		// Crea 10 basuras aleatorias
+		trashTypes := []string{"recycle", "garbage", "compost"}
+		trashImages := map[string][]string{
+			"recycle": {"botella.png", "lata.png", "vidrio.png", "marcadores.png"},
+			"garbage": {"caja-pizza.png", "curita.png", "hueso.png", "utensilios.png"},
+			"compost": {"manzana.png", "cascara.png", "huevo.png", "carton.png"},
+		}
+		for i := 0; i < 10; i++ {
+			typ := trashTypes[rand.Intn(len(trashTypes))]
+			imgs := trashImages[typ]
+			img := imgs[rand.Intn(len(imgs))]
+			x := int32(19+rand.Intn(17)) * TILE_SIZE // 19..35 inclusive
+			y := int32(18+rand.Intn(18)) * TILE_SIZE // 18..35 inclusive
+			id := fmt.Sprintf("trash_%d", i)
+			s.trash[id] = &TrashState{
+				ID:    id,
+				X:     x,
+				Y:     y,
+				Type:  typ,
+				Image: img,
+			}
+			fmt.Printf("[TRASH] Creada basura %s tipo %s imagen %s en (%d,%d)\n", id, typ, img, x, y)
+		}
+	}
+
 	s.cond.Broadcast()
 	s.mu.Unlock()
 
@@ -115,6 +153,7 @@ func (s *server) Connect(stream pb.GameService_ConnectServer) error {
 					s.gameStarted = false
 					s.tick = 0
 					s.gameStartOnce = sync.Once{}
+					s.trash = make(map[string]*TrashState) // Reinicia la basura
 				}
 				s.mu.Unlock()
 				s.cond.Broadcast()
@@ -198,7 +237,16 @@ func clamp(val, min, max int32) int32 {
 }
 
 func (s *server) applyAction(p *playerConn, action *pb.PlayerAction) {
-	log.Printf("Jugador %s realizó acción: %v\n", p.id, action)
+	fmt.Printf("[DEBUG] Acción recibida de %s: %+v\n", p.id, action) // <-- LOG de toda acción recibida
+	if action.PickupTrashId != nil {
+		fmt.Printf("[DEBUG] PickupTrashId recibido: %v\n", *action.PickupTrashId)
+	}
+	if action.DepositTrashId != nil {
+		fmt.Printf("[DEBUG] DepositTrashId recibido: %v\n", *action.DepositTrashId)
+	}
+	if action.DepositBinType != nil {
+		fmt.Printf("[DEBUG] DepositBinType recibido: %v\n", *action.DepositBinType)
+	}
 	switch action.Action {
 	case pb.ActionType_MOVE:
 		switch action.Direction {
@@ -217,6 +265,28 @@ func (s *server) applyAction(p *playerConn, action *pb.PlayerAction) {
 		fmt.Printf("%s atacó hacia %v\n", p.id, action.Direction)
 	}
 
+	// Nuevo: recoger basura si corresponde
+	if action.PickupTrashId != nil && *action.PickupTrashId != "" {
+		trashID := *action.PickupTrashId
+		fmt.Printf("[DEBUG] PickupTrashId recibido: %s\n", trashID) // <-- LOG del id recibido
+		if trash, ok := s.trash[trashID]; ok {
+			delete(s.trash, trashID)
+			fmt.Printf("[TRASH] Jugador %s recogió basura %s tipo %s\n", p.id, trashID, trash.Type)
+		}
+	}
+
+	// Nuevo: depositar basura
+	if action.DepositTrashId != nil && *action.DepositTrashId != "" && action.DepositBinType != nil && *action.DepositBinType != "" {
+		trashID := *action.DepositTrashId
+		binType := *action.DepositBinType
+		if trash, ok := s.trash[trashID]; ok {
+			if trash.Type == binType {
+				delete(s.trash, trashID)
+				fmt.Printf("[TRASH] Jugador %s depositó basura %s en bin %s\n", p.id, trashID, binType)
+			}
+		}
+	}
+
 	// Limita la posición para que no salga de la colina
 	p.position.X = clamp(p.position.X, COLINA_MIN_X, COLINA_MAX_X)
 	p.position.Y = clamp(p.position.Y, COLINA_MIN_Y, COLINA_MAX_Y)
@@ -227,15 +297,29 @@ func (s *server) buildGameState() *pb.GameState {
 	for _, p := range s.players {
 		players = append(players, p.position)
 	}
+	// Nuevo: agrega la basura al estado
+	trashList := make([]*pb.TrashState, 0, len(s.trash))
+	for _, t := range s.trash {
+		trashList = append(trashList, &pb.TrashState{
+			Id:    t.ID,
+			X:     t.X,
+			Y:     t.Y,
+			Type:  t.Type,
+			Image: t.Image, // Nuevo: envía el nombre de la imagen
+		})
+	}
 
 	return &pb.GameState{
 		Tick:        s.tick,
 		Players:     players,
 		GameStarted: true,
+		Trash:       trashList,
 	}
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano()) // Inicializa el generador de números aleatorios
+
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
 		log.Fatalf("Fallo al escuchar: %v", err)
@@ -248,4 +332,11 @@ func main() {
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Error en el servidor: %v", err)
 	}
+}
+
+func abs(x int32) int32 {
+	if x < 0 {
+		return -x
+	}
+	return x
 }

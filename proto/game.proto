@@ -15,6 +15,9 @@ message PlayerAction {
   ActionType action = 2;
   Direction direction = 3;
   optional int32 total_players = 4; // Solo usado por el primer jugador que se conecta
+  optional string pickup_trash_id = 5; // Nuevo: id de basura a recoger (si aplica)
+  optional string deposit_trash_id = 6; // Nuevo: id de basura a depositar
+  optional string deposit_bin_type = 7; // Nuevo: tipo de basurero
 }
 
 enum ActionType {
@@ -37,8 +40,18 @@ message PlayerState {
   int32 y = 3;
 }
 
+// Nuevo: Estado de una basura
+message TrashState {
+  string id = 1;
+  int32 x = 2;
+  int32 y = 3;
+  string type = 4;
+  string image = 5; // Nuevo: nombre de la imagen exacta
+}
+
 message GameState {
   int32 tick = 1;
   repeated PlayerState players = 2;
   bool game_started = 3;
+  repeated TrashState trash = 4; // Nuevo: lista de basuras activas
 }

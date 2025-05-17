@@ -26,7 +26,7 @@ go mod tidy
 ## Cliente Python
 
 ```bash
-python -m grpc_tools.protoc -I=proto --python_out=client --grpc_python_out=client proto/game.proto
+ python -m grpc_tools.protoc -I=proto --python_out=client/code --grpc_python_out=client/code proto/game.proto
 
 ```
 

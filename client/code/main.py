@@ -17,6 +17,8 @@ import pygame
 from os.path import join
 import uuid
 
+DEBUG_DRAW_HITBOX = True  # Activa el dibujo de hitboxes
+
 ZOOM = 0.3  # Ajusta el zoom aquí (1 = normal, 2 = doble, etc)
 
 class Game:
@@ -41,6 +43,9 @@ class Game:
         self.grpc_running = True
         self.pending_actions = []
 
+        self.trash_dict = {}  # trash_id -> Trash
+        self.trash_bins = []  # Lista de TrashBin locales
+
         # Tamaño total del mapa (ajustar según tu mapa)
         self.map_width = 40  # ejemplo, ajusta al tamaño real
         self.map_height = 40
@@ -64,19 +69,15 @@ class Game:
             CollisionSprite((obj.x, obj.y), pygame.Surface((obj.width, obj.height)), self.collision_sprites)
 
         bin_positions = [
-            ((22 * TILE_SIZE, 17 * TILE_SIZE), 'recycle'),
-            ((27 * TILE_SIZE, 17 * TILE_SIZE), 'garbage'),
-            ((32 * TILE_SIZE, 17 * TILE_SIZE), 'compost')
+            ((22 * TILE_SIZE, 18 * TILE_SIZE), 'recycle'),
+            ((27 * TILE_SIZE, 18 * TILE_SIZE), 'garbage'),
+            ((32 * TILE_SIZE, 18 * TILE_SIZE), 'compost')
         ]
         for pos, bin_type in bin_positions:
-            TrashBin(pos, (self.all_sprites, self.trash_group), bin_type)
+            bin_obj = TrashBin(pos, (self.all_sprites, self.trash_group), bin_type)
+            self.trash_bins.append(bin_obj)
 
-        trash_types = ['recycle', 'garbage', 'compost']
-        for _ in range(10):
-            x = randint(19, 35) * TILE_SIZE
-            y = randint(18, 35) * TILE_SIZE
-            trash_type = choice(trash_types)
-            Trash((x, y), (self.all_sprites, self.trash_group), trash_type)
+        # No crear basura aquí, ahora la crea el servidor y se sincroniza
 
     def start_grpc_client(self):
         def grpc_loop():
@@ -88,7 +89,6 @@ class Game:
             self.local_player_id = player_id
 
             def action_stream():
-                # Enviar acción inicial para registrar al jugador
                 yield game_pb2.PlayerAction(
                     player_id=player_id,
                     action=game_pb2.MOVE,
@@ -97,24 +97,34 @@ class Game:
                 )
                 while self.grpc_running:
                     if self.pending_actions:
-                        action_type, direction = self.pending_actions.pop(0)
-                        yield game_pb2.PlayerAction(
+                        args = self.pending_actions.pop(0)
+                        action_type, direction = args[0], args[1]
+                        kwargs = dict(
                             player_id=player_id,
                             action=action_type,
                             direction=direction
                         )
+                        # Agrega los campos opcionales SOLO si no son None y son string
+                        if len(args) > 2 and args[2] is not None:
+                            kwargs["pickup_trash_id"] = str(args[2])
+                        if len(args) > 3 and args[3] is not None:
+                            kwargs["deposit_trash_id"] = str(args[3])
+                        if len(args) > 4 and args[4] is not None:
+                            kwargs["deposit_bin_type"] = str(args[4])
+                        print(f"[DEBUG] kwargs enviados: {kwargs}")
+                        action = game_pb2.PlayerAction(**kwargs)
+                        print(f"[DEBUG] Enviando acción al servidor: {action}")
+                        yield action
                     else:
                         time.sleep(0.05)
 
             try:
                 for game_state in stub.Connect(action_stream()):
                     tick = getattr(game_state, 'tick', None)
-                    print(f"[gRPC] Tick recibido: {tick if tick is not None else 'N/A'}")
+                    # print(f"[gRPC] Tick recibido: {tick if tick is not None else 'N/A'}")
                     # Actualiza las posiciones de todos los jugadores
                     with self.players_positions_lock:
-                        # Solo mantener los jugadores que están en el estado recibido y tienen player_id válido
                         current_ids = set(p.player_id for p in game_state.players if p.player_id)
-                        # Eliminar jugadores que ya no están
                         for pid in list(self.players_dict.keys()):
                             if pid not in current_ids:
                                 del self.players_dict[pid]
@@ -122,18 +132,15 @@ class Game:
                             p.player_id: (p.x, p.y)
                             for p in game_state.players if p.player_id
                         }
-                        # Crea los Player si no existen y el id es válido
                         for p in game_state.players:
                             if p.player_id and p.player_id not in self.players_dict:
                                 self.players_dict[p.player_id] = Player(
                                     (p.x, p.y),
                                     self.all_sprites, self.collision_sprites, self.trash_group
                                 )
-                                # Inicializa posición interpolada y objetivo
                                 self.players_dict[p.player_id].interp_pos = pygame.Vector2(p.x, p.y)
                                 self.players_dict[p.player_id].target_pos = pygame.Vector2(p.x, p.y)
                             elif p.player_id:
-                                # Actualiza la posición objetivo para interpolación
                                 new_rect = self.players_dict[p.player_id].rect.copy()
                                 new_rect.topleft = (round(p.x), round(p.y))
                                 collision = pygame.sprite.spritecollideany(
@@ -142,9 +149,27 @@ class Game:
                                 )
                                 if not collision:
                                     self.players_dict[p.player_id].target_pos = pygame.Vector2(p.x, p.y)
+
+                    # LOG: crear/eliminar basura
+                    trash_list = getattr(game_state, "trash", [])  # <-- Asegura que trash_list esté definida
+                    server_trash_ids = set()
+                    for t in trash_list:
+                        server_trash_ids.add(t.id)
+                        if t.id not in self.trash_dict:
+                            print(f"[TRASH] Creando basura {t.id} tipo {t.type} en ({t.x},{t.y}) imagen={getattr(t, 'image', None)}")
+                            trash = Trash((t.x, t.y), (self.all_sprites, self.trash_group), t.type, image_name=getattr(t, "image", None))
+                            trash.id = t.id
+                            self.trash_dict[t.id] = trash
+                        else:
+                            self.trash_dict[t.id].rect.topleft = (t.x, t.y)
+                    for tid in list(self.trash_dict.keys()):
+                        if tid not in server_trash_ids:
+                            print(f"[TRASH] Eliminando basura local {tid}")
+                            self.trash_dict[tid].kill()
+                            del self.trash_dict[tid]
+
             except grpc.RpcError as e:
                 print("Error de conexión gRPC:", e)
-
         self.grpc_thread = threading.Thread(target=grpc_loop, daemon=True)
         self.grpc_thread.start()
 
@@ -165,10 +190,8 @@ class Game:
             action = game_pb2.MOVE
             direction = game_pb2.RIGHT
         else:
-            return  # no enviamos nada si no es una tecla válida
-
-        # Añadir acción pendiente para enviar al servidor
-        self.pending_actions.append((action, direction))
+            return
+        self.pending_actions.append((action, direction, None))
 
     def run(self):
         while self.running:
@@ -180,7 +203,53 @@ class Game:
                 elif event.type == pygame.KEYDOWN:
                     if event.key in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
                         self.keys_pressed.add(event.key)
-                        self.send_movement()  # Solo aquí
+                        self.send_movement()
+                    if event.key == pygame.K_SPACE:
+                        if self.local_player_id and self.local_player_id in self.players_dict:
+                            player = self.players_dict[self.local_player_id]
+                            found = False
+                            for trash in list(self.trash_dict.values()):
+                                print(f"[DEBUG] Player hitbox: {player.hitbox_rect} Trash hitbox: {trash.hitbox_rect}")
+                                if player.hitbox_rect.colliderect(trash.hitbox_rect):
+                                    dx = player.rect.centerx - trash.rect.centerx
+                                    dy = player.rect.centery - trash.rect.centery
+                                    dist = (dx**2 + dy**2) ** 0.5
+                                    print(f"[TRASH] Intentando recoger basura {trash.id} tipo {trash.type} en {trash.rect.topleft} (jugador en {player.rect.topleft}) dist={dist:.1f}")
+                                    print(f"[TRASH] ¡Colisión detectada con basura {trash.id}!")
+                                    print(f"[TRASH] Enviando pickup_trash_id={trash.id} al servidor")
+                                    # SIEMPRE envía la petición al servidor
+                                    self.pending_actions.append((
+                                        game_pb2.MOVE, game_pb2.NONE, trash.id
+                                    ))
+                                    # Marca el intento de cargar, pero solo muestra el ícono si la basura ya no está en trash_dict
+                                    player.carrying_trash_id = trash.id
+                                    player.carrying_trash_type = trash.type
+                                    player.carrying_trash_image = trash.image
+                                    found = True
+                                    break
+                            if not found:
+                                print("[TRASH] No hay colisión con ninguna basura.")
+                            # No marques carrying_trash aquí, solo cuando la basura desaparezca
+                    if event.key == pygame.K_e:
+                        if self.local_player_id and self.local_player_id in self.players_dict:
+                            player = self.players_dict[self.local_player_id]
+                            if player.carrying_trash:
+                                for bin in self.trash_bins:
+                                    if player.hitbox_rect.colliderect(bin.hitbox_rect):
+                                        if bin.type == player.carrying_trash_type:
+                                            trash_id = getattr(player, "carrying_trash_id", None)
+                                            if trash_id:
+                                                self.pending_actions.append((
+                                                    game_pb2.MOVE, game_pb2.NONE, None, trash_id, bin.type
+                                                ))
+                                            print(f"[TRASH] Depositando basura tipo {player.carrying_trash_type} en bin {bin.type}")
+                                            player.carrying_trash = False
+                                            player.carrying_trash_type = None
+                                            player.carrying_trash_id = None  # <--- NUEVO
+                                            player.score += 100
+                                            from pointindicator import PointIndicator
+                                            PointIndicator(player.rect.center, 100, self.all_sprites)
+                                        break
                 elif event.type == pygame.KEYUP:
                     if event.key in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
                         self.keys_pressed.discard(event.key)
@@ -188,7 +257,7 @@ class Game:
             # Limpiar superficie del mapa sin zoom
             self.map_surface.fill((30, 30, 30))
 
-            # Dibujar todos los sprites (mapa, basura, etc) en la superficie sin zoom
+            # Dibujar todos los sprites (mapa, basura, bins, etc) en la superficie sin zoom
             sprites_with_image = [spr for spr in self.all_sprites if hasattr(spr, "image")]
             if sprites_with_image:
                 pygame.sprite.Group(sprites_with_image).draw(self.map_surface)
@@ -198,7 +267,6 @@ class Game:
                 for player_id, pos in self.players_positions.items():
                     if player_id in self.players_dict:
                         player = self.players_dict[player_id]
-                        # Verificar colisión ANTES de actualizar target_pos
                         new_rect = player.rect.copy()
                         new_rect.topleft = (round(pos[0]), round(pos[1]))
                         collision = pygame.sprite.spritecollideany(
@@ -207,7 +275,6 @@ class Game:
                         )
                         if not collision:
                             player.target_pos = pygame.Vector2(pos)
-                        # Actualiza la posición objetivo para interpolación SOLO si no hay colisión
                         if not hasattr(player, "interp_pos"):
                             player.interp_pos = pygame.Vector2(player.rect.topleft)
                         speed = 200  # píxeles por segundo (ajusta a gusto)
@@ -217,11 +284,9 @@ class Game:
                             move_dist = min(speed * dt, distance)
                             if direction.length_squared() > 0:
                                 direction = direction.normalize()
-                            # Calcular nueva posición tentativa
                             new_interp_pos = player.interp_pos + direction * move_dist
                             new_rect = player.rect.copy()
                             new_rect.topleft = (round(new_interp_pos.x), round(new_interp_pos.y))
-                            # Verificar colisión antes de mover
                             collision = pygame.sprite.spritecollideany(
                                 type('TempSprite', (pygame.sprite.Sprite,), {'rect': new_rect})(),
                                 self.collision_sprites
@@ -229,15 +294,33 @@ class Game:
                             if not collision:
                                 player.interp_pos = new_interp_pos
                         player.rect.topleft = (round(player.interp_pos.x), round(player.interp_pos.y))
+                        player.hitbox_rect.center = player.rect.center
 
-                        # Animación según dirección
+                        # Solo marca carrying_trash=True si la basura ya no está en trash_dict
+                        if hasattr(player, "carrying_trash_id"):
+                            if player.carrying_trash_id not in self.trash_dict:
+                                player.carrying_trash = True
+                            else:
+                                player.carrying_trash = False
+
                         if direction.length_squared() > 0:
                             player.direction = direction.normalize()
                         else:
                             player.direction = pygame.Vector2(0, 0)
                         player.animate(dt)
                         self.map_surface.blit(player.image, player.rect)
-                        player.draw_trash_icon(self.map_surface)
+                        if player_id == self.local_player_id:
+                            player.draw_trash_icon(self.map_surface)
+
+            # Dibuja hitboxes para depuración
+            if DEBUG_DRAW_HITBOX:
+                # Dibuja hitbox del jugador local en rojo
+                if self.local_player_id and self.local_player_id in self.players_dict:
+                    player = self.players_dict[self.local_player_id]
+                    pygame.draw.rect(self.map_surface, (255, 0, 0), player.hitbox_rect, 2)
+                # Dibuja hitboxes de todas las basuras en azul
+                for trash in self.trash_dict.values():
+                    pygame.draw.rect(self.map_surface, (0, 0, 255), trash.hitbox_rect, 2)
 
             # Escalar superficie para zoom
             scaled_surface = pygame.transform.scale(
