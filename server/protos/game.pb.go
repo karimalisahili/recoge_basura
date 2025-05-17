@@ -359,7 +359,8 @@ type GameState struct {
 	Tick          int32                  `protobuf:"varint,1,opt,name=tick,proto3" json:"tick,omitempty"`
 	Players       []*PlayerState         `protobuf:"bytes,2,rep,name=players,proto3" json:"players,omitempty"`
 	GameStarted   bool                   `protobuf:"varint,3,opt,name=game_started,json=gameStarted,proto3" json:"game_started,omitempty"`
-	Trash         []*TrashState          `protobuf:"bytes,4,rep,name=trash,proto3" json:"trash,omitempty"` // Nuevo: lista de basuras activas
+	Trash         []*TrashState          `protobuf:"bytes,4,rep,name=trash,proto3" json:"trash,omitempty"`                                                                              // Nuevo: lista de basuras activas
+	Scores        map[string]int32       `protobuf:"bytes,5,rep,name=scores,proto3" json:"scores,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Nuevo: puntajes por jugador
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -422,6 +423,13 @@ func (x *GameState) GetTrash() []*TrashState {
 	return nil
 }
 
+func (x *GameState) GetScores() map[string]int32 {
+	if x != nil {
+		return x.Scores
+	}
+	return nil
+}
+
 var File_proto_game_proto protoreflect.FileDescriptor
 
 const file_proto_game_proto_rawDesc = "" +
@@ -449,12 +457,16 @@ const file_proto_game_proto_rawDesc = "" +
 	"\x01x\x18\x02 \x01(\x05R\x01x\x12\f\n" +
 	"\x01y\x18\x03 \x01(\x05R\x01y\x12\x12\n" +
 	"\x04type\x18\x04 \x01(\tR\x04type\x12\x14\n" +
-	"\x05image\x18\x05 \x01(\tR\x05image\"\x97\x01\n" +
+	"\x05image\x18\x05 \x01(\tR\x05image\"\x87\x02\n" +
 	"\tGameState\x12\x12\n" +
 	"\x04tick\x18\x01 \x01(\x05R\x04tick\x12+\n" +
 	"\aplayers\x18\x02 \x03(\v2\x11.game.PlayerStateR\aplayers\x12!\n" +
 	"\fgame_started\x18\x03 \x01(\bR\vgameStarted\x12&\n" +
-	"\x05trash\x18\x04 \x03(\v2\x10.game.TrashStateR\x05trash*,\n" +
+	"\x05trash\x18\x04 \x03(\v2\x10.game.TrashStateR\x05trash\x123\n" +
+	"\x06scores\x18\x05 \x03(\v2\x1b.game.GameState.ScoresEntryR\x06scores\x1a9\n" +
+	"\vScoresEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01*,\n" +
 	"\n" +
 	"ActionType\x12\b\n" +
 	"\x04MOVE\x10\x00\x12\n" +
@@ -483,7 +495,7 @@ func file_proto_game_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_game_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_proto_game_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_proto_game_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_proto_game_proto_goTypes = []any{
 	(ActionType)(0),      // 0: game.ActionType
 	(Direction)(0),       // 1: game.Direction
@@ -491,19 +503,21 @@ var file_proto_game_proto_goTypes = []any{
 	(*PlayerState)(nil),  // 3: game.PlayerState
 	(*TrashState)(nil),   // 4: game.TrashState
 	(*GameState)(nil),    // 5: game.GameState
+	nil,                  // 6: game.GameState.ScoresEntry
 }
 var file_proto_game_proto_depIdxs = []int32{
 	0, // 0: game.PlayerAction.action:type_name -> game.ActionType
 	1, // 1: game.PlayerAction.direction:type_name -> game.Direction
 	3, // 2: game.GameState.players:type_name -> game.PlayerState
 	4, // 3: game.GameState.trash:type_name -> game.TrashState
-	2, // 4: game.GameService.Connect:input_type -> game.PlayerAction
-	5, // 5: game.GameService.Connect:output_type -> game.GameState
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	6, // 4: game.GameState.scores:type_name -> game.GameState.ScoresEntry
+	2, // 5: game.GameService.Connect:input_type -> game.PlayerAction
+	5, // 6: game.GameService.Connect:output_type -> game.GameState
+	6, // [6:7] is the sub-list for method output_type
+	5, // [5:6] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_proto_game_proto_init() }
@@ -518,7 +532,7 @@ func file_proto_game_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_game_proto_rawDesc), len(file_proto_game_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

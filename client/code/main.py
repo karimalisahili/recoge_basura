@@ -55,6 +55,10 @@ class Game:
 
         self.keys_pressed = set()  # para controlar teclas presionadas
 
+        self.last_score = 0
+        self.score_message_time = 0
+        self.score_message = ""
+
         self.setup()
         self.start_grpc_client()
 
@@ -151,7 +155,7 @@ class Game:
                                     self.players_dict[p.player_id].target_pos = pygame.Vector2(p.x, p.y)
 
                     # LOG: crear/eliminar basura
-                    trash_list = getattr(game_state, "trash", [])  # <-- Asegura que trash_list esté definida
+                    trash_list = getattr(game_state, "trash", [])
                     server_trash_ids = set()
                     for t in trash_list:
                         server_trash_ids.add(t.id)
@@ -162,11 +166,32 @@ class Game:
                             self.trash_dict[t.id] = trash
                         else:
                             self.trash_dict[t.id].rect.topleft = (t.x, t.y)
-                    for tid in list(self.trash_dict.keys()):
-                        if tid not in server_trash_ids:
-                            print(f"[TRASH] Eliminando basura local {tid}")
-                            self.trash_dict[tid].kill()
-                            del self.trash_dict[tid]
+                    # Elimina basura local de forma segura
+                    for tid in [tid for tid in list(self.trash_dict.keys()) if tid not in server_trash_ids]:
+                        print(f"[TRASH] Eliminando basura local {tid}")
+                        self.trash_dict[tid].kill()
+                        del self.trash_dict[tid]
+
+                    # Sincroniza el puntaje y estado de basura cargada de cada jugador
+                    scores = getattr(game_state, "scores", {})
+                    for pid, player in self.players_dict.items():
+                        # Actualiza el puntaje si está en el estado
+                        if hasattr(game_state, "scores") and pid in game_state.scores:
+                            prev_score = getattr(player, "score", 0)
+                            player.score = game_state.scores[pid]
+                            # Si el score del jugador local subió, muestra mensaje
+                            if pid == self.local_player_id and player.score > self.last_score:
+                                self.score_message = f"+{player.score - self.last_score} puntos!"
+                                self.score_message_time = time.time()
+                                self.last_score = player.score
+                        # Si el jugador tiene una basura cargada (no está en trash_dict pero tiene carrying_trash_id)
+                        if hasattr(player, "carrying_trash_id") and player.carrying_trash_id:
+                            if player.carrying_trash_id not in self.trash_dict:
+                                player.carrying_trash = True
+                            else:
+                                player.carrying_trash = False
+                        else:
+                            player.carrying_trash = False
 
             except grpc.RpcError as e:
                 print("Error de conexión gRPC:", e)
@@ -233,22 +258,21 @@ class Game:
                     if event.key == pygame.K_e:
                         if self.local_player_id and self.local_player_id in self.players_dict:
                             player = self.players_dict[self.local_player_id]
-                            if player.carrying_trash:
+                            # Permite depositar si tiene un id de basura cargada
+                            trash_id = getattr(player, "carrying_trash_id", None)
+                            trash_type = getattr(player, "carrying_trash_type", None)
+                            if trash_id and trash_type:
                                 for bin in self.trash_bins:
                                     if player.hitbox_rect.colliderect(bin.hitbox_rect):
-                                        if bin.type == player.carrying_trash_type:
-                                            trash_id = getattr(player, "carrying_trash_id", None)
-                                            if trash_id:
-                                                self.pending_actions.append((
-                                                    game_pb2.MOVE, game_pb2.NONE, None, trash_id, bin.type
-                                                ))
-                                            print(f"[TRASH] Depositando basura tipo {player.carrying_trash_type} en bin {bin.type}")
+                                        if bin.type == trash_type:
+                                            self.pending_actions.append((
+                                                game_pb2.MOVE, game_pb2.NONE, None, trash_id, bin.type
+                                            ))
+                                            print(f"[TRASH] Depositando basura tipo {trash_type} en bin {bin.type}")
+                                            # Solo borra los datos después de enviar la acción
                                             player.carrying_trash = False
                                             player.carrying_trash_type = None
-                                            player.carrying_trash_id = None  # <--- NUEVO
-                                            player.score += 100
-                                            from pointindicator import PointIndicator
-                                            PointIndicator(player.rect.center, 100, self.all_sprites)
+                                            player.carrying_trash_id = None
                                         break
                 elif event.type == pygame.KEYUP:
                     if event.key in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
@@ -309,7 +333,8 @@ class Game:
                             player.direction = pygame.Vector2(0, 0)
                         player.animate(dt)
                         self.map_surface.blit(player.image, player.rect)
-                        if player_id == self.local_player_id:
+                        # Dibuja el ícono de basura para todos los jugadores que estén cargando
+                        if player.carrying_trash:
                             player.draw_trash_icon(self.map_surface)
 
             # Dibuja hitboxes para depuración
@@ -328,6 +353,25 @@ class Game:
                 (int(self.map_surface.get_width() * ZOOM), int(self.map_surface.get_height() * ZOOM))
             )
             self.display_surface.blit(scaled_surface, (0, 0))
+
+            # Dibuja los puntajes de todos los jugadores en la pantalla
+            font = pygame.font.SysFont(None, 32)
+            y = 10
+            for pid, player in self.players_dict.items():
+                score_text = f"{pid}: {getattr(player, 'score', 0)}"
+                color = (255, 255, 0) if pid == self.local_player_id else (200, 200, 200)
+                text_surf = font.render(score_text, True, color)
+                self.display_surface.blit(text_surf, (10, y))
+                y += 30
+
+            # Dibuja mensaje de puntos si corresponde
+            if self.score_message and (time.time() - self.score_message_time < 2):
+                msg_font = pygame.font.SysFont(None, 48)
+                msg_surf = msg_font.render(self.score_message, True, (0, 255, 0))
+                rect = msg_surf.get_rect(center=(WINDOW_WIDTH // 2, 60))
+                self.display_surface.blit(msg_surf, rect)
+            elif self.score_message and (time.time() - self.score_message_time >= 2):
+                self.score_message = ""
 
             pygame.display.flip()
 

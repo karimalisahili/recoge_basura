@@ -42,10 +42,12 @@ type TrashState struct {
 // players es un mapa en memoria que guarda los jugadores conectados por su ID.
 
 type playerConn struct {
-	id       string
-	stream   pb.GameService_ConnectServer
-	actions  chan *pb.PlayerAction
-	position *pb.PlayerState
+	id                string
+	stream            pb.GameService_ConnectServer
+	actions           chan *pb.PlayerAction
+	position          *pb.PlayerState
+	carryingTrashID   string
+	carryingTrashType string
 }
 
 type server struct {
@@ -58,12 +60,14 @@ type server struct {
 	gameStartOnce sync.Once
 	cond          *sync.Cond
 	trash         map[string]*TrashState // Nuevo: mapa de basura activa
+	scores        map[string]int32       // Nuevo: puntaje por jugador
 }
 
 func newServer() *server {
 	s := &server{
 		players: make(map[string]*playerConn),
 		trash:   make(map[string]*TrashState), // Inicializa el mapa de basura
+		scores:  make(map[string]int32),       // Inicializa el mapa de puntajes
 	}
 	s.cond = sync.NewCond(&s.mu)
 	return s
@@ -154,6 +158,7 @@ func (s *server) Connect(stream pb.GameService_ConnectServer) error {
 					s.tick = 0
 					s.gameStartOnce = sync.Once{}
 					s.trash = make(map[string]*TrashState) // Reinicia la basura
+					s.scores = make(map[string]int32)      // Reinicia los puntajes
 				}
 				s.mu.Unlock()
 				s.cond.Broadcast()
@@ -265,25 +270,31 @@ func (s *server) applyAction(p *playerConn, action *pb.PlayerAction) {
 		fmt.Printf("%s atacó hacia %v\n", p.id, action.Direction)
 	}
 
-	// Nuevo: recoger basura si corresponde
+	// Recoger basura
 	if action.PickupTrashId != nil && *action.PickupTrashId != "" {
 		trashID := *action.PickupTrashId
 		fmt.Printf("[DEBUG] PickupTrashId recibido: %s\n", trashID) // <-- LOG del id recibido
 		if trash, ok := s.trash[trashID]; ok {
 			delete(s.trash, trashID)
+			p.carryingTrashID = trashID
+			p.carryingTrashType = trash.Type
 			fmt.Printf("[TRASH] Jugador %s recogió basura %s tipo %s\n", p.id, trashID, trash.Type)
 		}
 	}
 
-	// Nuevo: depositar basura
+	// Depositar basura
 	if action.DepositTrashId != nil && *action.DepositTrashId != "" && action.DepositBinType != nil && *action.DepositBinType != "" {
 		trashID := *action.DepositTrashId
 		binType := *action.DepositBinType
-		if trash, ok := s.trash[trashID]; ok {
-			if trash.Type == binType {
-				delete(s.trash, trashID)
-				fmt.Printf("[TRASH] Jugador %s depositó basura %s en bin %s\n", p.id, trashID, binType)
-			}
+		fmt.Printf("[DEBUG] DepositTrashId recibido: %s, binType: %s\n", trashID, binType)
+		// Permite depositar si el jugador está cargando esa basura y el tipo coincide
+		if p.carryingTrashID == trashID && p.carryingTrashType == binType {
+			s.scores[p.id] += 100
+			fmt.Printf("[TRASH] Jugador %s depositó basura %s en bin %s (+100 puntos, total=%d)\n", p.id, trashID, binType, s.scores[p.id])
+			p.carryingTrashID = ""
+			p.carryingTrashType = ""
+		} else {
+			fmt.Printf("[TRASH] Jugador %s intentó depositar basura %s en bin %s, pero no la está cargando o el tipo no coincide\n", p.id, trashID, binType)
 		}
 	}
 
@@ -308,12 +319,18 @@ func (s *server) buildGameState() *pb.GameState {
 			Image: t.Image, // Nuevo: envía el nombre de la imagen
 		})
 	}
+	// Nuevo: agrega los puntajes al estado
+	scores := make(map[string]int32)
+	for pid, score := range s.scores {
+		scores[pid] = score
+	}
 
 	return &pb.GameState{
 		Tick:        s.tick,
 		Players:     players,
 		GameStarted: true,
 		Trash:       trashList,
+		Scores:      scores, // Nuevo
 	}
 }
 

@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ngame.proto\x12\x04game\"\xc7\x01\n\x0cPlayerAction\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12 \n\x06\x61\x63tion\x18\x02 \x01(\x0e\x32\x10.game.ActionType\x12\"\n\tdirection\x18\x03 \x01(\x0e\x32\x0f.game.Direction\x12\x1a\n\rtotal_players\x18\x04 \x01(\x05H\x00\x88\x01\x01\x12\x1c\n\x0fpickup_trash_id\x18\x05 \x01(\tH\x01\x88\x01\x01\x42\x10\n\x0e_total_playersB\x12\n\x10_pickup_trash_id\"6\n\x0bPlayerState\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\t\n\x01x\x18\x02 \x01(\x05\x12\t\n\x01y\x18\x03 \x01(\x05\"<\n\nTrashState\x12\n\n\x02id\x18\x01 \x01(\t\x12\t\n\x01x\x18\x02 \x01(\x05\x12\t\n\x01y\x18\x03 \x01(\x05\x12\x0c\n\x04type\x18\x04 \x01(\t\"t\n\tGameState\x12\x0c\n\x04tick\x18\x01 \x01(\x05\x12\"\n\x07players\x18\x02 \x03(\x0b\x32\x11.game.PlayerState\x12\x14\n\x0cgame_started\x18\x03 \x01(\x08\x12\x1f\n\x05trash\x18\x04 \x03(\x0b\x32\x10.game.TrashState*,\n\nActionType\x12\x08\n\x04MOVE\x10\x00\x12\n\n\x06\x41TTACK\x10\x01\x12\x08\n\x04JUMP\x10\x02*<\n\tDirection\x12\x06\n\x02UP\x10\x00\x12\x08\n\x04\x44OWN\x10\x01\x12\x08\n\x04LEFT\x10\x02\x12\t\n\x05RIGHT\x10\x03\x12\x08\n\x04NONE\x10\x04\x32\x41\n\x0bGameService\x12\x32\n\x07\x43onnect\x12\x12.game.PlayerAction\x1a\x0f.game.GameState(\x01\x30\x01\x42\tZ\x07/protosb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ngame.proto\x12\x04game\"\xaf\x02\n\x0cPlayerAction\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12 \n\x06\x61\x63tion\x18\x02 \x01(\x0e\x32\x10.game.ActionType\x12\"\n\tdirection\x18\x03 \x01(\x0e\x32\x0f.game.Direction\x12\x1a\n\rtotal_players\x18\x04 \x01(\x05H\x00\x88\x01\x01\x12\x1c\n\x0fpickup_trash_id\x18\x05 \x01(\tH\x01\x88\x01\x01\x12\x1d\n\x10\x64\x65posit_trash_id\x18\x06 \x01(\tH\x02\x88\x01\x01\x12\x1d\n\x10\x64\x65posit_bin_type\x18\x07 \x01(\tH\x03\x88\x01\x01\x42\x10\n\x0e_total_playersB\x12\n\x10_pickup_trash_idB\x13\n\x11_deposit_trash_idB\x13\n\x11_deposit_bin_type\"6\n\x0bPlayerState\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\t\n\x01x\x18\x02 \x01(\x05\x12\t\n\x01y\x18\x03 \x01(\x05\"K\n\nTrashState\x12\n\n\x02id\x18\x01 \x01(\t\x12\t\n\x01x\x18\x02 \x01(\x05\x12\t\n\x01y\x18\x03 \x01(\x05\x12\x0c\n\x04type\x18\x04 \x01(\t\x12\r\n\x05image\x18\x05 \x01(\t\"\xd0\x01\n\tGameState\x12\x0c\n\x04tick\x18\x01 \x01(\x05\x12\"\n\x07players\x18\x02 \x03(\x0b\x32\x11.game.PlayerState\x12\x14\n\x0cgame_started\x18\x03 \x01(\x08\x12\x1f\n\x05trash\x18\x04 \x03(\x0b\x32\x10.game.TrashState\x12+\n\x06scores\x18\x05 \x03(\x0b\x32\x1b.game.GameState.ScoresEntry\x1a-\n\x0bScoresEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01*,\n\nActionType\x12\x08\n\x04MOVE\x10\x00\x12\n\n\x06\x41TTACK\x10\x01\x12\x08\n\x04JUMP\x10\x02*<\n\tDirection\x12\x06\n\x02UP\x10\x00\x12\x08\n\x04\x44OWN\x10\x01\x12\x08\n\x04LEFT\x10\x02\x12\t\n\x05RIGHT\x10\x03\x12\x08\n\x04NONE\x10\x04\x32\x41\n\x0bGameService\x12\x32\n\x07\x43onnect\x12\x12.game.PlayerAction\x1a\x0f.game.GameState(\x01\x30\x01\x42\tZ\x07/protosb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,18 +32,22 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'game_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z\007/protos'
-  _globals['_ACTIONTYPE']._serialized_start=458
-  _globals['_ACTIONTYPE']._serialized_end=502
-  _globals['_DIRECTION']._serialized_start=504
-  _globals['_DIRECTION']._serialized_end=564
+  _globals['_GAMESTATE_SCORESENTRY']._loaded_options = None
+  _globals['_GAMESTATE_SCORESENTRY']._serialized_options = b'8\001'
+  _globals['_ACTIONTYPE']._serialized_start=670
+  _globals['_ACTIONTYPE']._serialized_end=714
+  _globals['_DIRECTION']._serialized_start=716
+  _globals['_DIRECTION']._serialized_end=776
   _globals['_PLAYERACTION']._serialized_start=21
-  _globals['_PLAYERACTION']._serialized_end=220
-  _globals['_PLAYERSTATE']._serialized_start=222
-  _globals['_PLAYERSTATE']._serialized_end=276
-  _globals['_TRASHSTATE']._serialized_start=278
-  _globals['_TRASHSTATE']._serialized_end=338
-  _globals['_GAMESTATE']._serialized_start=340
-  _globals['_GAMESTATE']._serialized_end=456
-  _globals['_GAMESERVICE']._serialized_start=566
-  _globals['_GAMESERVICE']._serialized_end=631
+  _globals['_PLAYERACTION']._serialized_end=324
+  _globals['_PLAYERSTATE']._serialized_start=326
+  _globals['_PLAYERSTATE']._serialized_end=380
+  _globals['_TRASHSTATE']._serialized_start=382
+  _globals['_TRASHSTATE']._serialized_end=457
+  _globals['_GAMESTATE']._serialized_start=460
+  _globals['_GAMESTATE']._serialized_end=668
+  _globals['_GAMESTATE_SCORESENTRY']._serialized_start=623
+  _globals['_GAMESTATE_SCORESENTRY']._serialized_end=668
+  _globals['_GAMESERVICE']._serialized_start=778
+  _globals['_GAMESERVICE']._serialized_end=843
 # @@protoc_insertion_point(module_scope)
