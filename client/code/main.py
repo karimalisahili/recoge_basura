@@ -21,6 +21,88 @@ DEBUG_DRAW_HITBOX = True  # Activa el dibujo de hitboxes
 
 ZOOM = 0.3  # Ajusta el zoom aquí (1 = normal, 2 = doble, etc)
 
+def show_menu(display_surface):
+    font = pygame.font.SysFont(None, 60)
+    small_font = pygame.font.SysFont(None, 36)
+    menu_options = ["Jugar", "Cómo jugar"]
+    selected = 0
+    running = True
+    show_instructions = False
+
+    # Carga la imagen del logo (ajusta la ruta si es necesario)
+    logo_path = join('images', 'recogebasura.png')
+    try:
+        logo_img = pygame.image.load(logo_path).convert_alpha()
+        logo_img = pygame.transform.scale(logo_img, (220, 220))  # Ajusta el tamaño si quieres
+    except Exception as e:
+        print(f"No se pudo cargar la imagen del logo: {e}")
+        logo_img = None
+
+    instructions = [
+        "Recoge la basura y llévala al bote correcto.",
+        "Usa las flechas para moverte.",
+        "Presiona ESPACIO para recoger la basura.",
+        "Presiona E para desechar la basura.",
+        "¡Clasifica correctamente para ganar puntos!",
+        "",
+        "Presiona ESC para volver."
+    ]
+
+    while running:
+        display_surface.fill((30, 30, 30))
+        if show_instructions:
+            y = 120
+            for line in instructions:
+                text = small_font.render(line, True, (255, 255, 255))
+                display_surface.blit(text, (80, y))
+                y += 40
+        else:
+            # Centra el título en la parte superior
+            title = font.render("Recoge Basura", True, (200, 255, 200))
+            title_rect = title.get_rect()
+            title_rect.centerx = display_surface.get_width() // 2
+            title_rect.top = 40  # Puedes ajustar este valor para subir o bajar el título
+            display_surface.blit(title, title_rect)
+
+            # Dibuja la imagen centrada y un poco más arriba
+            logo_y = 120  # Puedes ajustar este valor para subir o bajar el logo
+            if logo_img:
+                img_rect = logo_img.get_rect()
+                img_rect.centerx = display_surface.get_width() // 2
+                img_rect.top = logo_y
+                display_surface.blit(logo_img, img_rect)
+                options_start_y = img_rect.bottom + 40  # Opciones debajo del logo
+            else:
+                options_start_y = logo_y + 220 + 40  # Si no hay logo, deja el espacio igual
+
+            # Dibuja las opciones debajo del logo
+            for i, option in enumerate(menu_options):
+                color = (255, 255, 0) if i == selected else (255, 255, 255)
+                text = small_font.render(option, True, color)
+                text_rect = text.get_rect()
+                text_rect.centerx = display_surface.get_width() // 2
+                text_rect.top = options_start_y + i * 50  # Espaciado entre opciones
+                display_surface.blit(text, text_rect)
+
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if show_instructions:
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    show_instructions = False
+            else:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        selected = (selected - 1) % len(menu_options)
+                    elif event.key == pygame.K_DOWN:
+                        selected = (selected + 1) % len(menu_options)
+                    elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                        if selected == 0:
+                            running = False  # Inicia el juego
+                        elif selected == 1:
+                            show_instructions = True
 class Game:
     def __init__(self):
         pygame.init()
@@ -403,5 +485,8 @@ class Game:
 
 
 if __name__ == '__main__':
+    pygame.init()
+    display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    show_menu(display_surface)
     game = Game()
     game.run()
