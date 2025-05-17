@@ -31,7 +31,7 @@ class Trash(pygame.sprite.Sprite):
             raise ValueError(f"Unknown trash type: {self.type}")
 
         # Scale the image to fit the tile size
-        self.image = pygame.transform.scale(self.image, (TILE_SIZE // 2, TILE_SIZE // 2))
+        self.image = pygame.transform.scale(self.image, (TILE_SIZE, TILE_SIZE))
 
         # Asegura que pos sea una tupla de enteros
         if pos is None or len(pos) != 2:

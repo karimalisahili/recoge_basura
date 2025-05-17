@@ -103,9 +103,51 @@ def show_menu(display_surface):
                             running = False  # Inicia el juego
                         elif selected == 1:
                             show_instructions = True
+
+def show_game_over(display_surface, scores_dict):
+    font = pygame.font.SysFont(None, 60)
+    small_font = pygame.font.SysFont(None, 36)
+    running = True
+
+    # Ordena los puntajes de mayor a menor
+    sorted_scores = sorted(scores_dict.items(), key=lambda x: x[1], reverse=True)
+    winner = sorted_scores[0][0] if sorted_scores else None
+
+    while running:
+        display_surface.fill((30, 30, 30))
+        title = font.render("¡Juego Terminado!", True, (255, 255, 255))
+        title_rect = title.get_rect(center=(display_surface.get_width() // 2, 80))
+        display_surface.blit(title, title_rect)
+
+        y = 180
+        for i, (name, score) in enumerate(sorted_scores):
+            color = (0, 255, 0) if name == winner else (255, 255, 255)
+            text = small_font.render(f"{name}: {score}", True, color)
+            text_rect = text.get_rect(center=(display_surface.get_width() // 2, y))
+            display_surface.blit(text, text_rect)
+            y += 50
+
+        winner_text = small_font.render(f"Ganador: {winner}", True, (255, 215, 0))
+        winner_rect = winner_text.get_rect(center=(display_surface.get_width() // 2, y + 30))
+        display_surface.blit(winner_text, winner_rect)
+
+        # Añade el texto para volver al menú principal
+        esc_text = small_font.render("Presiona ESC para volver al menú principal", True, (200, 200, 200))
+        esc_rect = esc_text.get_rect(center=(display_surface.get_width() // 2, display_surface.get_height() - 60))
+        display_surface.blit(esc_text, esc_rect)
+
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                running = False
+
+
 class Game:
     def __init__(self):
         pygame.init()
+        self.game_started = False # ojito
         self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption('Recoge basura')
         self.clock = pygame.time.Clock()
@@ -206,6 +248,7 @@ class Game:
 
             try:
                 for game_state in stub.Connect(action_stream()):
+                    self.game_started = getattr(game_state, "game_started", False) #ojito
                     tick = getattr(game_state, 'tick', None)
                     # print(f"[gRPC] Tick recibido: {tick if tick is not None else 'N/A'}")
                     # Actualiza las posiciones de todos los jugadores
@@ -478,6 +521,14 @@ class Game:
                 self.display_surface.blit(msg_surf, rect)
             elif self.score_message and (time.time() - self.score_message_time >= 2):
                 self.score_message = ""
+
+            #Revisa si no hay basura
+            if self.game_started and len(self.trash_dict) == 0:
+                # Muestra la pantalla final con los puntajes
+                scores = {pid: getattr(player, "score", 0) for pid, player in self.players_dict.items()}
+                show_game_over(self.display_surface, scores)
+                self.running = False
+                break  # Sale del bucle principal
 
             pygame.display.flip()
 
