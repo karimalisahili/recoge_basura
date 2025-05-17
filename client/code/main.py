@@ -366,12 +366,27 @@ class Game:
             # Dibuja los puntajes de todos los jugadores en la pantalla
             font = pygame.font.SysFont(None, 32)
             y = 10
+            score_texts = []
+            max_width = 0
             for pid, player in self.players_dict.items():
                 score_text = f"{pid}: {getattr(player, 'score', 0)}"
                 color = (255, 255, 0) if pid == self.local_player_id else (200, 200, 200)
                 text_surf = font.render(score_text, True, color)
-                self.display_surface.blit(text_surf, (10, y))
-                y += 30
+                score_texts.append((text_surf, color, score_text))
+                if text_surf.get_width() > max_width:
+                    max_width = text_surf.get_width()
+            # Calcula el alto total del fondo
+            bg_height = len(score_texts) * 30 + 10
+            bg_width = max_width + 20
+            # Dibuja fondo semitransparente
+            score_bg = pygame.Surface((bg_width, bg_height), pygame.SRCALPHA)
+            score_bg.fill((0, 0, 0, 180))  # negro con alpha
+            self.display_surface.blit(score_bg, (5, 5))
+            # Dibuja los textos encima del fondo
+            y_offset = 10
+            for text_surf, color, score_text in score_texts:
+                self.display_surface.blit(text_surf, (15, y_offset))
+                y_offset += 30
 
             # Dibuja mensaje de puntos si corresponde
             if self.score_message and (time.time() - self.score_message_time < 2):
