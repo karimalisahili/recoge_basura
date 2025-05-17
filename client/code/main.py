@@ -14,14 +14,19 @@ import game_pb2_grpc
 import time
 import random
 import pygame
-from os.path import join
+from os.path import join, dirname
 import uuid
 
 DEBUG_DRAW_HITBOX = True  # Activa el dibujo de hitboxes
 
-ZOOM = 0.3  # Ajusta el zoom aquí (1 = normal, 2 = doble, etc)
+SOUNDS_PATH = join(dirname(dirname(__file__)), 'sound')
+
+ZOOM = 0.4  # Ajusta el zoom aquí (1 = normal, 2 = doble, etc)
 
 def show_menu(display_surface):
+    pygame.mixer.music.load(join(SOUNDS_PATH, 'title music.mp3'))
+    pygame.mixer.music.set_volume(0.5)  # Volumen (0.0 a 1.0)
+    pygame.mixer.music.play(-1)
     font = pygame.font.SysFont(None, 60)
     small_font = pygame.font.SysFont(None, 36)
     menu_options = ["Jugar", "Cómo jugar"]
@@ -173,6 +178,7 @@ def show_game_over(display_surface, scores_dict):
 class Game:
     def __init__(self):
         pygame.init()
+        pygame.mixer.init()
         self.game_started = False
         self.game_finished = False
         self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -523,7 +529,8 @@ class Game:
                 self.map_surface,
                 (int(self.map_surface.get_width() * ZOOM), int(self.map_surface.get_height() * ZOOM))
             )
-            self.display_surface.blit(scaled_surface, (0, 0))
+            # Move camera focus down by shifting the surface up (e.g., -80 pixels)
+            self.display_surface.blit(scaled_surface, (-300, -300))
 
             # Dibuja los puntajes de todos los jugadores en la pantalla
             font = pygame.font.SysFont(None, 32)
@@ -573,9 +580,12 @@ class Game:
 
 if __name__ == '__main__':
     pygame.init()
+    pygame.mixer.init()
     display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     while True:
         show_menu(display_surface)
+        pygame.mixer.music.load(join(SOUNDS_PATH, 'game music.mp3'))
+        pygame.mixer.music.play(-1)
         game = Game()
         scores = game.run()
         action = show_game_over(display_surface, scores)
