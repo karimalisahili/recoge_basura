@@ -26,6 +26,19 @@ SERVER_IP = "192.168.0.127"  # IP del servidor
 SERVER_PORT = 50051
 
 def show_menu(display_surface):
+    try:
+        recycle_img = pygame.image.load(join('images', 'reciclaje.png')).convert_alpha()
+        garbage_img = pygame.image.load(join('images', 'trash.png')).convert_alpha()
+        compost_img = pygame.image.load(join('images', 'compost.png')).convert_alpha()
+        # Ajusta el tamaño si es necesario
+        icon_size = (200, 200)
+        recycle_img = pygame.transform.scale(recycle_img, icon_size)
+        garbage_img = pygame.transform.scale(garbage_img, icon_size)
+        compost_img = pygame.transform.scale(compost_img, icon_size)
+    except Exception as e:
+        print(f"No se pudieron cargar las imágenes de tipos de basura: {e}")
+        recycle_img = garbage_img = compost_img = None
+
     pygame.mixer.music.load(join(SOUNDS_PATH, 'title music.mp3'))
     pygame.mixer.music.set_volume(0.5)  # Volumen (0.0 a 1.0)
     pygame.mixer.music.play(-1)
@@ -63,6 +76,14 @@ def show_menu(display_surface):
                 text = small_font.render(line, True, (255, 255, 255))
                 display_surface.blit(text, (80, y))
                 y += 40
+            if recycle_img and garbage_img and compost_img:
+                total_width = recycle_img.get_width() + garbage_img.get_width() + compost_img.get_width() + 40  # 20px de espacio entre imágenes
+                start_x = (display_surface.get_width() - total_width) // 2
+                img_y = display_surface.get_height() - recycle_img.get_height() - 40  # 40px desde abajo
+
+                display_surface.blit(recycle_img, (start_x, img_y))
+                display_surface.blit(garbage_img, (start_x + recycle_img.get_width() + 20, img_y))
+                display_surface.blit(compost_img, (start_x + recycle_img.get_width() + 20 + garbage_img.get_width() + 20, img_y))        
         else:
             # Centra el título en la parte superior
             title = font.render("Recoge Basura", True, (200, 255, 200))
@@ -300,6 +321,8 @@ class Game:
     def __init__(self, player_name, total_players=None, join_existing=False):
         pygame.init()
         pygame.mixer.init()
+        self.pickup_sound = pygame.mixer.Sound(join(SOUNDS_PATH, 'switch.wav'))
+        self.deposit_sound = pygame.mixer.Sound(join(SOUNDS_PATH, 'positive.wav'))
         self.game_started = False
         self.game_finished = False
         self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -554,6 +577,7 @@ class Game:
                                         player.carrying_trash_type = trash.type
                                         player.carrying_trash_image = trash.image
                                         found = True
+                                        self.pickup_sound.play()
                                         break
                                 if not found:
                                     print("[TRASH] No hay colisión con ninguna basura.")
@@ -574,6 +598,7 @@ class Game:
                                             player.carrying_trash = False
                                             player.carrying_trash_type = None
                                             player.carrying_trash_id = None
+                                            self.deposit_sound.play()
                                         break
                 elif event.type == pygame.KEYUP:
                     if event.key in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
