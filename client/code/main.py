@@ -175,8 +175,127 @@ def show_game_over(display_surface, scores_dict):
                 elif event.key == pygame.K_ESCAPE:
                     return "menu"
 
+def show_waiting_room(display_surface, player_name, total_players, get_connected_count, player_list=None):
+    font = pygame.font.SysFont(None, 48)
+    small_font = pygame.font.SysFont(None, 36)
+    running = True
+    while running:
+        display_surface.fill((30, 30, 30))
+        title = font.render("Sala de espera", True, (255, 255, 255))
+        title_rect = title.get_rect(center=(display_surface.get_width() // 2, 100))
+        display_surface.blit(title, title_rect)
+        name_text = small_font.render(f"Jugador: {player_name}", True, (255, 255, 0))
+        name_rect = name_text.get_rect(center=(display_surface.get_width() // 2, 180))
+        display_surface.blit(name_text, name_rect)
+        connected = get_connected_count()
+        info_text = small_font.render(f"Jugadores conectados: {connected}/{total_players}", True, (200, 255, 200))
+        info_rect = info_text.get_rect(center=(display_surface.get_width() // 2, 250))
+        display_surface.blit(info_text, info_rect)
+        # Mostrar lista de jugadores conectados si está disponible
+        if player_list:
+            y = 290
+            for pname in player_list:
+                ptext = small_font.render(f"- {pname}", True, (255, 255, 255))
+                prect = ptext.get_rect(center=(display_surface.get_width() // 2, y))
+                display_surface.blit(ptext, prect)
+                y += 30
+        if connected < total_players:
+            wait_text = small_font.render("Esperando a más jugadores...", True, (255, 255, 255))
+            wait_rect = wait_text.get_rect(center=(display_surface.get_width() // 2, 320 + (len(player_list) if player_list else 0)*10))
+            display_surface.blit(wait_text, wait_rect)
+        pygame.display.update()
+        if connected >= total_players:
+            pygame.time.wait(1000)
+            return
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+def show_error_message(display_surface, message):
+    font = pygame.font.SysFont(None, 48)
+    small_font = pygame.font.SysFont(None, 32)
+    running = True
+    while running:
+        display_surface.fill((30, 30, 30))
+        text = font.render("Error", True, (255, 80, 80))
+        text_rect = text.get_rect(center=(display_surface.get_width() // 2, 160))
+        display_surface.blit(text, text_rect)
+        lines = message.split('\n')
+        for i, line in enumerate(lines):
+            msg = small_font.render(line, True, (255, 255, 255))
+            msg_rect = msg.get_rect(center=(display_surface.get_width() // 2, 240 + i * 36))
+            display_surface.blit(msg, msg_rect)
+        ok_text = small_font.render("[ OK ]", True, (255, 255, 0))
+        ok_rect = ok_text.get_rect(center=(display_surface.get_width() // 2, 340 + len(lines)*10))
+        display_surface.blit(ok_text, ok_rect)
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                return
+
+def ask_player_name(display_surface):
+    font = pygame.font.SysFont(None, 48)
+    small_font = pygame.font.SysFont(None, 36)
+    name = ""
+    running = True
+    while running:
+        display_surface.fill((30, 30, 30))
+        title = font.render("Ingresa tu nombre:", True, (255, 255, 255))
+        title_rect = title.get_rect(center=(display_surface.get_width() // 2, 120))
+        display_surface.blit(title, title_rect)
+        name_text = small_font.render(name + "|", True, (255, 255, 0))
+        name_rect = name_text.get_rect(center=(display_surface.get_width() // 2, 200))
+        display_surface.blit(name_text, name_rect)
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN and name.strip():
+                    return name.strip()
+                elif event.key == pygame.K_BACKSPACE:
+                    name = name[:-1]
+                elif event.key == pygame.K_ESCAPE:
+                    return None
+                elif event.unicode and len(name) < 16 and event.unicode.isprintable():
+                    name += event.unicode
+
+def ask_total_players(display_surface):
+    font = pygame.font.SysFont(None, 48)
+    small_font = pygame.font.SysFont(None, 36)
+    options = [2, 3, 4]
+    selected = 0
+    running = True
+    while running:
+        display_surface.fill((30, 30, 30))
+        title = font.render("¿Cuántos jugadores?", True, (255, 255, 255))
+        title_rect = title.get_rect(center=(display_surface.get_width() // 2, 120))
+        display_surface.blit(title, title_rect)
+        for i, num in enumerate(options):
+            color = (255, 255, 0) if i == selected else (255, 255, 255)
+            text = small_font.render(str(num), True, color)
+            text_rect = text.get_rect(center=(display_surface.get_width() // 2, 220 + i * 60))
+            display_surface.blit(text, text_rect)
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    selected = (selected - 1) % len(options)
+                elif event.key == pygame.K_DOWN:
+                    selected = (selected + 1) % len(options)
+                elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                    return options[selected]
+
 class Game:
-    def __init__(self):
+    def __init__(self, player_name, total_players=None, join_existing=False):
         pygame.init()
         pygame.mixer.init()
         self.game_started = False
@@ -203,18 +322,22 @@ class Game:
         self.trash_dict = {}  # trash_id -> Trash
         self.trash_bins = []  # Lista de TrashBin locales
 
-        # Tamaño total del mapa (ajustar según tu mapa)
-        self.map_width = 40  # ejemplo, ajusta al tamaño real
+        self.map_width = 40
         self.map_height = 40
-
-        # Crear superficie donde se dibuja el mapa y sprites (sin zoom)
         self.map_surface = pygame.Surface((self.map_width * TILE_SIZE, self.map_height * TILE_SIZE))
 
-        self.keys_pressed = set()  # para controlar teclas presionadas
-
+        self.keys_pressed = set()
         self.last_score = 0
         self.score_message_time = 0
         self.score_message = ""
+
+        self.player_name = player_name
+        self.total_players = total_players
+        self.join_existing = join_existing
+
+        self.grpc_error = None
+        self.connected_players_count = 1
+        self.connected_player_names = [player_name]
 
         self.setup()
         self.start_grpc_client()
@@ -238,23 +361,19 @@ class Game:
             bin_obj = TrashBin(pos, (self.all_sprites, self.trash_group), bin_type)
             self.trash_bins.append(bin_obj)
 
-        # No crear basura aquí, ahora la crea el servidor y se sincroniza
-
     def start_grpc_client(self):
         def grpc_loop():
             channel = grpc.insecure_channel("localhost:50051")
             stub = game_pb2_grpc.GameServiceStub(channel)
-
-            player_id = f"jugador_{uuid.uuid4().hex[:6]}"
-            total_players = 2
+            player_id = self.player_name
+            total_players = self.total_players if not self.join_existing else 0
             self.local_player_id = player_id
-
             def action_stream():
                 yield game_pb2.PlayerAction(
                     player_id=player_id,
                     action=game_pb2.MOVE,
                     direction=game_pb2.NONE,
-                    total_players=total_players if total_players > 0 else None
+                    total_players=total_players if total_players else None
                 )
                 while self.grpc_running:
                     if self.pending_actions:
@@ -265,28 +384,22 @@ class Game:
                             action=action_type,
                             direction=direction
                         )
-                        # Agrega los campos opcionales SOLO si no son None y son string
                         if len(args) > 2 and args[2] is not None:
                             kwargs["pickup_trash_id"] = str(args[2])
                         if len(args) > 3 and args[3] is not None:
                             kwargs["deposit_trash_id"] = str(args[3])
                         if len(args) > 4 and args[4] is not None:
                             kwargs["deposit_bin_type"] = str(args[4])
-                        print(f"[DEBUG] kwargs enviados: {kwargs}")
                         action = game_pb2.PlayerAction(**kwargs)
-                        print(f"[DEBUG] Enviando acción al servidor: {action}")
                         yield action
                     else:
                         time.sleep(0.05)
-
             try:
                 for game_state in stub.Connect(action_stream()):
                     if not self.grpc_running:
-                        break  # Sale del bucle si se pide terminar el stream
+                        break
                     self.game_started = getattr(game_state, "game_started", False)
                     self.game_finished = getattr(game_state, "game_finished", False)
-                    tick = getattr(game_state, 'tick', None)
-                    # print(f"[gRPC] Tick recibido: {tick if tick is not None else 'N/A'}")
                     # Actualiza las posiciones de todos los jugadores
                     with self.players_positions_lock:
                         current_ids = set(p.player_id for p in game_state.players if p.player_id)
@@ -297,6 +410,9 @@ class Game:
                             p.player_id: (p.x, p.y)
                             for p in game_state.players if p.player_id
                         }
+                        # Actualiza lista de nombres conectados para la sala de espera
+                        self.connected_players_count = len(game_state.players)
+                        self.connected_player_names = [p.player_id for p in game_state.players]
                         for p in game_state.players:
                             if p.player_id and p.player_id not in self.players_dict:
                                 self.players_dict[p.player_id] = Player(
@@ -315,42 +431,33 @@ class Game:
                                 if not collision:
                                     self.players_dict[p.player_id].target_pos = pygame.Vector2(p.x, p.y)
 
-                    # LOG: crear/eliminar basura
                     trash_list = getattr(game_state, "trash", [])
                     server_trash_ids = set()
                     for t in trash_list:
                         server_trash_ids.add(t.id)
                         if t.id not in self.trash_dict:
-                            print(f"[TRASH] Creando basura {t.id} tipo {t.type} en ({t.x},{t.y}) imagen={getattr(t, 'image', None)}")
                             trash = Trash((t.x, t.y), (self.all_sprites, self.trash_group), t.type, image_name=getattr(t, "image", None))
                             trash.id = t.id
                             self.trash_dict[t.id] = trash
                         else:
                             self.trash_dict[t.id].rect.topleft = (t.x, t.y)
-                    # Elimina basura local de forma segura
                     for tid in [tid for tid in list(self.trash_dict.keys()) if tid not in server_trash_ids]:
-                        print(f"[TRASH] Eliminando basura local {tid}")
                         self.trash_dict[tid].kill()
                         del self.trash_dict[tid]
 
-                    # Sincroniza el puntaje y estado de basura cargada de cada jugador
                     scores = getattr(game_state, "scores", {})
                     for pid, player in self.players_dict.items():
-                        # Actualiza el puntaje si está en el estado
                         if hasattr(game_state, "scores") and pid in game_state.scores:
                             prev_score = getattr(player, "score", 0)
                             player.score = game_state.scores[pid]
-                            # Si el score del jugador local subió, muestra mensaje
                             if pid == self.local_player_id and player.score > self.last_score:
                                 self.score_message = f"+{player.score - self.last_score} puntos!"
                                 self.score_message_time = time.time()
                                 self.last_score = player.score
-                                # Limpiar atributos de basura cargada al depositar y ganar puntos
                                 player.carrying_trash = False
                                 player.carrying_trash_type = None
                                 player.carrying_trash_id = None
                                 player.carrying_trash_image = None
-                        # Si el jugador tiene una basura cargada (no está en trash_dict pero tiene carrying_trash_id)
                         if hasattr(player, "carrying_trash_id") and player.carrying_trash_id:
                             if player.carrying_trash_id not in self.trash_dict:
                                 player.carrying_trash = True
@@ -361,15 +468,21 @@ class Game:
 
             except grpc.RpcError as e:
                 print("Error de conexión gRPC:", e)
+                self.grpc_error = str(e)
         self.grpc_running = True
         self.grpc_thread = threading.Thread(target=grpc_loop, daemon=True)
         self.grpc_thread.start()
 
     def stop_grpc_client(self):
         self.grpc_running = False
-        # Espera a que el hilo termine (máximo 1 segundo)
         if self.grpc_thread and self.grpc_thread.is_alive():
             self.grpc_thread.join(timeout=1)
+
+    def get_connected_players_count(self):
+        return getattr(self, "connected_players_count", 1)
+
+    def get_connected_player_names(self):
+        return getattr(self, "connected_player_names", [self.player_name])
 
     def send_movement(self):
         if not self.keys_pressed:
@@ -392,6 +505,26 @@ class Game:
         self.pending_actions.append((action, direction, None))
 
     def run(self):
+        if self.total_players:
+            while not getattr(self, "game_started", False):
+                if self.grpc_error:
+                    result = self.grpc_error
+                    if "details =" in result:
+                        import re
+                        m = re.search(r'details = "(.*?)"', result)
+                        if m:
+                            result = m.group(1)
+                    show_error_message(self.display_surface, result)
+                    return "grpc_error"
+                show_waiting_room(
+                    self.display_surface,
+                    self.player_name,
+                    self.total_players,
+                    self.get_connected_players_count,
+                    self.get_connected_player_names()
+                )
+                pygame.time.wait(500)
+
         while self.running:
             dt = self.clock.tick(60) / 1000
 
@@ -405,23 +538,16 @@ class Game:
                     if event.key == pygame.K_SPACE:
                         if self.local_player_id and self.local_player_id in self.players_dict:
                             player = self.players_dict[self.local_player_id]
-                            # Solo permite recoger si NO está cargando basura
                             if not getattr(player, "carrying_trash", False):
                                 found = False
                                 for trash in list(self.trash_dict.values()):
-                                    print(f"[DEBUG] Player hitbox: {player.hitbox_rect} Trash hitbox: {trash.hitbox_rect}")
                                     if player.hitbox_rect.colliderect(trash.hitbox_rect):
                                         dx = player.rect.centerx - trash.rect.centerx
                                         dy = player.rect.centery - trash.rect.centery
                                         dist = (dx**2 + dy**2) ** 0.5
-                                        print(f"[TRASH] Intentando recoger basura {trash.id} tipo {trash.type} en {trash.rect.topleft} (jugador en {player.rect.topleft}) dist={dist:.1f}")
-                                        print(f"[TRASH] ¡Colisión detectada con basura {trash.id}!")
-                                        print(f"[TRASH] Enviando pickup_trash_id={trash.id} al servidor")
-                                        # SIEMPRE envía la petición al servidor
                                         self.pending_actions.append((
                                             game_pb2.MOVE, game_pb2.NONE, trash.id
                                         ))
-                                        # Marca el intento de cargar, pero solo muestra el ícono si la basura ya no está en trash_dict
                                         player.carrying_trash_id = trash.id
                                         player.carrying_trash_type = trash.type
                                         player.carrying_trash_image = trash.image
@@ -429,13 +555,11 @@ class Game:
                                         break
                                 if not found:
                                     print("[TRASH] No hay colisión con ninguna basura.")
-                                # No marques carrying_trash aquí, solo cuando la basura desaparezca
                             else:
                                 print("[TRASH] Ya estás cargando basura, deposítala antes de recoger otra.")
                     if event.key == pygame.K_e:
                         if self.local_player_id and self.local_player_id in self.players_dict:
                             player = self.players_dict[self.local_player_id]
-                            # Permite depositar si tiene un id de basura cargada
                             trash_id = getattr(player, "carrying_trash_id", None)
                             trash_type = getattr(player, "carrying_trash_type", None)
                             if trash_id and trash_type:
@@ -445,8 +569,6 @@ class Game:
                                             self.pending_actions.append((
                                                 game_pb2.MOVE, game_pb2.NONE, None, trash_id, bin.type
                                             ))
-                                            print(f"[TRASH] Depositando basura tipo {trash_type} en bin {bin.type}")
-                                            # Solo borra los datos después de enviar la acción
                                             player.carrying_trash = False
                                             player.carrying_trash_type = None
                                             player.carrying_trash_id = None
@@ -455,15 +577,12 @@ class Game:
                     if event.key in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
                         self.keys_pressed.discard(event.key)
 
-            # Limpiar superficie del mapa sin zoom
             self.map_surface.fill((30, 30, 30))
 
-            # Dibujar todos los sprites (mapa, basura, bins, etc) en la superficie sin zoom
             sprites_with_image = [spr for spr in self.all_sprites if hasattr(spr, "image")]
             if sprites_with_image:
                 pygame.sprite.Group(sprites_with_image).draw(self.map_surface)
 
-            # Actualizar y dibujar jugadores
             with self.players_positions_lock:
                 for player_id, pos in self.players_positions.items():
                     if player_id in self.players_dict:
@@ -478,7 +597,7 @@ class Game:
                             player.target_pos = pygame.Vector2(pos)
                         if not hasattr(player, "interp_pos"):
                             player.interp_pos = pygame.Vector2(player.rect.topleft)
-                        speed = 200  # píxeles por segundo (ajusta a gusto)
+                        speed = 200
                         direction = player.target_pos - player.interp_pos
                         distance = direction.length()
                         if distance > 0:
@@ -497,7 +616,6 @@ class Game:
                         player.rect.topleft = (round(player.interp_pos.x), round(player.interp_pos.y))
                         player.hitbox_rect.center = player.rect.center
 
-                        # Solo marca carrying_trash=True si la basura ya no está en trash_dict
                         if hasattr(player, "carrying_trash_id"):
                             if player.carrying_trash_id not in self.trash_dict:
                                 player.carrying_trash = True
@@ -510,29 +628,22 @@ class Game:
                             player.direction = pygame.Vector2(0, 0)
                         player.animate(dt)
                         self.map_surface.blit(player.image, player.rect)
-                        # Dibuja el ícono de basura para todos los jugadores que estén cargando
                         if player.carrying_trash:
                             player.draw_trash_icon(self.map_surface)
 
-            # Dibuja hitboxes para depuración
             if DEBUG_DRAW_HITBOX:
-                # Dibuja hitbox del jugador local en rojo
                 if self.local_player_id and self.local_player_id in self.players_dict:
                     player = self.players_dict[self.local_player_id]
                     pygame.draw.rect(self.map_surface, (255, 0, 0), player.hitbox_rect, 2)
-                # Dibuja hitboxes de todas las basuras en azul
                 for trash in self.trash_dict.values():
                     pygame.draw.rect(self.map_surface, (0, 0, 255), trash.hitbox_rect, 2)
 
-            # Escalar superficie para zoom
             scaled_surface = pygame.transform.scale(
                 self.map_surface,
                 (int(self.map_surface.get_width() * ZOOM), int(self.map_surface.get_height() * ZOOM))
             )
-            # Move camera focus down by shifting the surface up (e.g., -80 pixels)
             self.display_surface.blit(scaled_surface, (-300, -300))
 
-            # Dibuja los puntajes de todos los jugadores en la pantalla
             font = pygame.font.SysFont(None, 32)
             y = 10
             score_texts = []
@@ -544,20 +655,16 @@ class Game:
                 score_texts.append((text_surf, color, score_text))
                 if text_surf.get_width() > max_width:
                     max_width = text_surf.get_width()
-            # Calcula el alto total del fondo
             bg_height = len(score_texts) * 30 + 10
             bg_width = max_width + 20
-            # Dibuja fondo semitransparente
             score_bg = pygame.Surface((bg_width, bg_height), pygame.SRCALPHA)
-            score_bg.fill((0, 0, 0, 180))  # negro con alpha
+            score_bg.fill((0, 0, 0, 180))
             self.display_surface.blit(score_bg, (5, 5))
-            # Dibuja los textos encima del fondo
             y_offset = 10
             for text_surf, color, score_text in score_texts:
                 self.display_surface.blit(text_surf, (15, y_offset))
                 y_offset += 30
 
-            # Dibuja mensaje de puntos si corresponde
             if self.score_message and (time.time() - self.score_message_time < 2):
                 msg_font = pygame.font.SysFont(None, 48)
                 msg_surf = msg_font.render(self.score_message, True, (0, 255, 0))
@@ -566,17 +673,15 @@ class Game:
             elif self.score_message and (time.time() - self.score_message_time >= 2):
                 self.score_message = ""
 
-            # Terminar solo cuando el servidor indique que el juego terminó
             if getattr(self, "game_finished", False):
                 scores = {pid: getattr(player, "score", 0) for pid, player in self.players_dict.items()}
-                self.stop_grpc_client()  # <-- Detén el stream antes de salir
+                self.stop_grpc_client()
                 return scores
 
             pygame.display.flip()
 
-        self.stop_grpc_client()  # <-- Detén el stream si se sale por cualquier motivo
+        self.stop_grpc_client()
         pygame.quit()
-
 
 if __name__ == '__main__':
     pygame.init()
@@ -584,14 +689,31 @@ if __name__ == '__main__':
     display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     while True:
         show_menu(display_surface)
+        player_name = None
+        while not player_name:
+            player_name = ask_player_name(display_surface)
+        total_players = None
+        while not total_players:
+            total_players = ask_total_players(display_surface)
         pygame.mixer.music.load(join(SOUNDS_PATH, 'game music.mp3'))
         pygame.mixer.music.play(-1)
-        game = Game()
-        scores = game.run()
-        action = show_game_over(display_surface, scores)
-        if action == "menu":
-            continue  # vuelve al menú principal (el stream ya está cerrado)
-        elif action == "play_again":
-            continue  # vuelve a iniciar el juego
-        else:
-            break  # salir del juego
+        game = Game(player_name, total_players=total_players, join_existing=False)
+        result = game.run()
+        if result == "grpc_error":
+            continue
+        if isinstance(result, str) and ("ya existe una sala creada" in result or "llena" in result or "el primer jugador debe definir" in result or "no hay salas disponibles" in result):
+            if "details =" in result:
+                import re
+                m = re.search(r'details = "(.*?)"', result)
+                if m:
+                    result = m.group(1)
+            show_error_message(display_surface, result)
+            continue
+        if isinstance(result, dict):
+            action = show_game_over(display_surface, result)
+            if action == "menu":
+                continue
+            elif action == "play_again":
+                continue
+            else:
+                break

@@ -99,6 +99,12 @@ func (s *server) Connect(stream pb.GameService_ConnectServer) error {
 		if firstMsg.TotalPlayers != nil {
 			requestedTotal = *firstMsg.TotalPlayers
 		}
+		// Si la sala ya está llena, rechazar cualquier conexión nueva
+		if int32(len(s.players)) >= s.totalPlayers {
+			s.mu.Unlock()
+			return fmt.Errorf("la sala ya está llena (%d jugadores), espera a que termine la partida", s.totalPlayers)
+		}
+		// Si intenta crear una nueva sala cuando ya hay una creada, rechazar
 		if requestedTotal != 0 && requestedTotal != s.totalPlayers {
 			s.mu.Unlock()
 			return fmt.Errorf("no hay salas disponibles para %d jugadores, intente con %d", requestedTotal, s.totalPlayers)
