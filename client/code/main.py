@@ -15,13 +15,15 @@ import time
 import random
 import pygame
 from os.path import join, dirname
-import uuid
 
 DEBUG_DRAW_HITBOX = False  # Activa el dibujo de hitboxes
 
 SOUNDS_PATH = join(dirname(dirname(__file__)), 'sound')
 
 ZOOM = 0.4  # Ajusta el zoom aquí (1 = normal, 2 = doble, etc)
+
+SERVER_IP = "192.168.0.127"  # IP del servidor
+SERVER_PORT = 50051
 
 def show_menu(display_surface):
     pygame.mixer.music.load(join(SOUNDS_PATH, 'title music.mp3'))
@@ -363,7 +365,7 @@ class Game:
 
     def start_grpc_client(self):
         def grpc_loop():
-            channel = grpc.insecure_channel("localhost:50051")
+            channel = grpc.insecure_channel(f"{SERVER_IP}:{SERVER_PORT}")
             stub = game_pb2_grpc.GameServiceStub(channel)
             player_id = self.player_name
             total_players = self.total_players if not self.join_existing else 0

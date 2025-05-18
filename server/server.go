@@ -363,7 +363,7 @@ func (s *server) buildGameState() *pb.GameState {
 func main() {
 	rand.Seed(time.Now().UnixNano()) // Inicializa el generador de números aleatorios
 
-	lis, err := net.Listen("tcp", ":50051")
+	lis, err := net.Listen("tcp", "0.0.0.0:50051") // Escucha en todas las interfaces
 	if err != nil {
 		log.Fatalf("Fallo al escuchar: %v", err)
 	}
