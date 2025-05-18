@@ -574,6 +574,20 @@ class Game:
                                             player.carrying_trash = False
                                             player.carrying_trash_type = None
                                             player.carrying_trash_id = None
+                                            # Sonido positivo
+                                            try:
+                                                pygame.mixer.Sound(join(SOUNDS_PATH, "positive.wav")).play()
+                                            except Exception as e:
+                                                print(f"Error al reproducir positive.wav: {e}")
+                                        else:
+                                            # Sonido negativo
+                                            try:
+                                                sound = pygame.mixer.Sound(join(SOUNDS_PATH, "negative.wav"))
+                                                sound.set_volume(1.0)
+                                                sound.play()
+                                                
+                                            except Exception as e:
+                                                print(f"Error al reproducir negative.wav: {e}")
                                         break
                 elif event.type == pygame.KEYUP:
                     if event.key in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
