@@ -443,7 +443,9 @@ class Game:
                             self.trash_dict[t.id] = trash
                         else:
                             self.trash_dict[t.id].rect.topleft = (t.x, t.y)
-                    for tid in [tid for tid in list(self.trash_dict.keys()) if tid not in server_trash_ids]:
+                    # Fix: avoid changing dict size during iteration
+                    tids_to_remove = [tid for tid in self.trash_dict.keys() if tid not in server_trash_ids]
+                    for tid in tids_to_remove:
                         self.trash_dict[tid].kill()
                         del self.trash_dict[tid]
 
