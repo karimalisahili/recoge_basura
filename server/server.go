@@ -28,7 +28,7 @@ const (
 	COLINA_MIN_Y = COLINA_MIN_Y_TILE * TILE_SIZE
 	COLINA_MAX_Y = COLINA_MAX_Y_TILE*TILE_SIZE - TILE_SIZE
 
-	INITIAL_TRASH_COUNT = 2 // <--- Cambia este valor para la cantidad de basura inicial
+	INITIAL_TRASH_COUNT = 10 // <--- Cambia este valor para la cantidad de basura inicial
 )
 
 // IP del servidor (modificable)
