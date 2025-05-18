@@ -31,6 +31,9 @@ const (
 	INITIAL_TRASH_COUNT = 2 // <--- Cambia este valor para la cantidad de basura inicial
 )
 
+// IP del servidor (modificable)
+var serverIP = "192.168.0.127"
+
 type TrashState struct {
 	ID    string
 	X     int32
@@ -363,7 +366,8 @@ func (s *server) buildGameState() *pb.GameState {
 func main() {
 	rand.Seed(time.Now().UnixNano()) // Inicializa el generador de números aleatorios
 
-	lis, err := net.Listen("tcp", "0.0.0.0:50051") // Escucha en todas las interfaces
+	addr := fmt.Sprintf("%s:50051", serverIP)
+	lis, err := net.Listen("tcp", addr) // Usa la IP definida arriba
 	if err != nil {
 		log.Fatalf("Fallo al escuchar: %v", err)
 	}
@@ -371,7 +375,7 @@ func main() {
 	grpcServer := grpc.NewServer()
 	pb.RegisterGameServiceServer(grpcServer, newServer())
 
-	fmt.Println("Servidor escuchando en puerto 50051...")
+	fmt.Printf("Servidor escuchando en %s...\n", addr)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Error en el servidor: %v", err)
 	}
