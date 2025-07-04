@@ -22,7 +22,7 @@ SOUNDS_PATH = join(dirname(dirname(__file__)), 'sound')
 
 ZOOM = 0.4  # Ajusta el zoom aquí (1 = normal, 2 = doble, etc)
 
-SERVER_IP = "172.20.10.7"  # IP del servidor
+SERVER_IP = "192.168.137.1"  # IP del servidor
 SERVER_PORT = 50051
 
 def show_menu(display_surface):
