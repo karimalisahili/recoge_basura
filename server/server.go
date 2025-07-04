@@ -32,7 +32,7 @@ const (
 )
 
 // IP del servidor (modificable)
-var serverIP = "192.168.0.127"
+var serverIP = "172.20.10.7"
 
 type TrashState struct {
 	ID    string
