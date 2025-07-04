@@ -22,7 +22,7 @@ SOUNDS_PATH = join(dirname(dirname(__file__)), 'sound')
 
 ZOOM = 0.4  # Ajusta el zoom aquí (1 = normal, 2 = doble, etc)
 
-SERVER_IP = "192.168.137.1"  # IP del servidor
+SERVER_IP = "192.168.1.8"  # IP del servidor
 SERVER_PORT = 50051
 
 def show_menu(display_surface):
@@ -49,7 +49,7 @@ def show_menu(display_surface):
     running = True
     show_instructions = False
 
-    # Carga la imagen del logo (ajusta la ruta si es necesario)
+    # Carga la imagen del logo principal (recogebasura)
     logo_path = join('images', 'recogebasura.png')
     try:
         logo_img = pygame.image.load(logo_path).convert_alpha()
@@ -58,13 +58,21 @@ def show_menu(display_surface):
         print(f"No se pudo cargar la imagen del logo: {e}")
         logo_img = None
 
+    # Carga el logo de UCAB
+    ucab_logo_path = join('images', 'ucab.png')
+    try:
+        ucab_logo_img = pygame.image.load(ucab_logo_path).convert_alpha()
+        ucab_logo_img = pygame.transform.scale(ucab_logo_img, (120, 70))  # Más ancho, menos alto
+    except Exception as e:
+        print(f"No se pudo cargar la imagen del logo UCAB: {e}")
+        ucab_logo_img = None
+
     instructions = [
-        "Recoge la basura y llévala al bote correcto.",
+        "Recoge el desecho sólido y llévalo al bote correcto.",
         "Usa las flechas para moverte.",
-        "Presiona ESPACIO para recoger la basura.",
-        "Presiona E para desechar la basura.",
+        "Presiona ESPACIO para recoger el desecho sólido.",
+        "Presiona E para desechar el desecho sólido.",
         "¡Clasifica correctamente para ganar puntos!",
-        "",
         "Presiona ESC para volver."
     ]
 
@@ -77,20 +85,44 @@ def show_menu(display_surface):
                 display_surface.blit(text, (80, y))
                 y += 40
             if recycle_img and garbage_img and compost_img:
+                # Títulos para cada tipo de desecho (ahora debajo de cada imagen, una palabra sobre otra si son dos)
+                title_font = pygame.font.SysFont(None, 32)
+                titles = [
+                    ("Aprovechables\npara reciclaje", recycle_img),
+                    ("No\naprovechables", garbage_img),
+                    ("Orgánicos\naprovechables", compost_img)
+                ]
                 total_width = recycle_img.get_width() + garbage_img.get_width() + compost_img.get_width() + 40  # 20px de espacio entre imágenes
                 start_x = (display_surface.get_width() - total_width) // 2
-                img_y = display_surface.get_height() - recycle_img.get_height() - 40  # 40px desde abajo
-
+                # Ajusta la posición vertical para que los títulos no se corten
+                espacio_titulos = 70  # Espacio extra para los títulos debajo
+                img_y = display_surface.get_height() - recycle_img.get_height() - espacio_titulos
+                # Dibujar imágenes
                 display_surface.blit(recycle_img, (start_x, img_y))
                 display_surface.blit(garbage_img, (start_x + recycle_img.get_width() + 20, img_y))
-                display_surface.blit(compost_img, (start_x + recycle_img.get_width() + 20 + garbage_img.get_width() + 20, img_y))        
+                display_surface.blit(compost_img, (start_x + recycle_img.get_width() + 20 + garbage_img.get_width() + 20, img_y))
+                # Dibujar títulos debajo de cada imagen con más padding
+                padding = 25  # Espacio extra entre imagen y texto
+                for i, (title_text, img) in enumerate(titles):
+                    x = start_x + i * (img.get_width() + 20)
+                    lines = title_text.split("\n")
+                    for j, line in enumerate(lines):
+                        title_surf = title_font.render(line, True, (180, 220, 255))
+                        title_rect = title_surf.get_rect(center=(x + img.get_width() // 2, img_y + img.get_height() + padding + j * 30))
+                        display_surface.blit(title_surf, title_rect)
         else:
             # Centra el título en la parte superior
-            title = font.render("Recoge Basura", True, (200, 255, 200))
+            title = font.render("EcoAdventures", True, (200, 255, 200))
             title_rect = title.get_rect()
             title_rect.centerx = display_surface.get_width() // 2
             title_rect.top = 40  # Puedes ajustar este valor para subir o bajar el título
             display_surface.blit(title, title_rect)
+
+            # Dibuja el logo de UCAB arriba a la derecha
+            if ucab_logo_img:
+                ucab_rect = ucab_logo_img.get_rect()
+                ucab_rect.topright = (display_surface.get_width() - 30, 30)
+                display_surface.blit(ucab_logo_img, ucab_rect)
 
             # Dibuja la imagen centrada y un poco más arriba
             logo_y = 120  # Puedes ajustar este valor para subir o bajar el logo

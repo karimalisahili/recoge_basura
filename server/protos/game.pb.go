@@ -131,9 +131,9 @@ type PlayerAction struct {
 	Action         ActionType             `protobuf:"varint,2,opt,name=action,proto3,enum=game.ActionType" json:"action,omitempty"`
 	Direction      Direction              `protobuf:"varint,3,opt,name=direction,proto3,enum=game.Direction" json:"direction,omitempty"`
 	TotalPlayers   *int32                 `protobuf:"varint,4,opt,name=total_players,json=totalPlayers,proto3,oneof" json:"total_players,omitempty"`        // Solo usado por el primer jugador que se conecta
-	PickupTrashId  *string                `protobuf:"bytes,5,opt,name=pickup_trash_id,json=pickupTrashId,proto3,oneof" json:"pickup_trash_id,omitempty"`    // Nuevo: id de basura a recoger (si aplica)
-	DepositTrashId *string                `protobuf:"bytes,6,opt,name=deposit_trash_id,json=depositTrashId,proto3,oneof" json:"deposit_trash_id,omitempty"` // Nuevo: id de basura a depositar
-	DepositBinType *string                `protobuf:"bytes,7,opt,name=deposit_bin_type,json=depositBinType,proto3,oneof" json:"deposit_bin_type,omitempty"` // Nuevo: tipo de basurero
+	PickupTrashId  *string                `protobuf:"bytes,5,opt,name=pickup_trash_id,json=pickupTrashId,proto3,oneof" json:"pickup_trash_id,omitempty"`    // id de basura a recoger (si aplica)
+	DepositTrashId *string                `protobuf:"bytes,6,opt,name=deposit_trash_id,json=depositTrashId,proto3,oneof" json:"deposit_trash_id,omitempty"` // id de basura a depositar
+	DepositBinType *string                `protobuf:"bytes,7,opt,name=deposit_bin_type,json=depositBinType,proto3,oneof" json:"deposit_bin_type,omitempty"` // tipo de basurero
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -217,158 +217,21 @@ func (x *PlayerAction) GetDepositBinType() string {
 	return ""
 }
 
-type PlayerState struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	X             int32                  `protobuf:"varint,2,opt,name=x,proto3" json:"x,omitempty"`
-	Y             int32                  `protobuf:"varint,3,opt,name=y,proto3" json:"y,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PlayerState) Reset() {
-	*x = PlayerState{}
-	mi := &file_proto_game_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PlayerState) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PlayerState) ProtoMessage() {}
-
-func (x *PlayerState) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_game_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PlayerState.ProtoReflect.Descriptor instead.
-func (*PlayerState) Descriptor() ([]byte, []int) {
-	return file_proto_game_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *PlayerState) GetPlayerId() string {
-	if x != nil {
-		return x.PlayerId
-	}
-	return ""
-}
-
-func (x *PlayerState) GetX() int32 {
-	if x != nil {
-		return x.X
-	}
-	return 0
-}
-
-func (x *PlayerState) GetY() int32 {
-	if x != nil {
-		return x.Y
-	}
-	return 0
-}
-
-// Nuevo: Estado de una basura
-type TrashState struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	X             int32                  `protobuf:"varint,2,opt,name=x,proto3" json:"x,omitempty"`
-	Y             int32                  `protobuf:"varint,3,opt,name=y,proto3" json:"y,omitempty"`
-	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
-	Image         string                 `protobuf:"bytes,5,opt,name=image,proto3" json:"image,omitempty"` // Nuevo: nombre de la imagen exacta
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TrashState) Reset() {
-	*x = TrashState{}
-	mi := &file_proto_game_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TrashState) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TrashState) ProtoMessage() {}
-
-func (x *TrashState) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_game_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TrashState.ProtoReflect.Descriptor instead.
-func (*TrashState) Descriptor() ([]byte, []int) {
-	return file_proto_game_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *TrashState) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *TrashState) GetX() int32 {
-	if x != nil {
-		return x.X
-	}
-	return 0
-}
-
-func (x *TrashState) GetY() int32 {
-	if x != nil {
-		return x.Y
-	}
-	return 0
-}
-
-func (x *TrashState) GetType() string {
-	if x != nil {
-		return x.Type
-	}
-	return ""
-}
-
-func (x *TrashState) GetImage() string {
-	if x != nil {
-		return x.Image
-	}
-	return ""
-}
-
 type GameState struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Tick          int32                  `protobuf:"varint,1,opt,name=tick,proto3" json:"tick,omitempty"`
 	Players       []*PlayerState         `protobuf:"bytes,2,rep,name=players,proto3" json:"players,omitempty"`
 	GameStarted   bool                   `protobuf:"varint,3,opt,name=game_started,json=gameStarted,proto3" json:"game_started,omitempty"`
-	Trash         []*TrashState          `protobuf:"bytes,4,rep,name=trash,proto3" json:"trash,omitempty"`                                                                              // Nuevo: lista de basuras activas
-	Scores        map[string]int32       `protobuf:"bytes,5,rep,name=scores,proto3" json:"scores,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Nuevo: puntajes por jugador
-	GameFinished  bool                   `protobuf:"varint,6,opt,name=game_finished,json=gameFinished,proto3" json:"game_finished,omitempty"`                                           // Nuevo campo para sincronizar el final del juego
+	Trash         []*TrashState          `protobuf:"bytes,4,rep,name=trash,proto3" json:"trash,omitempty"`                                                                              // lista de basuras activas
+	Scores        map[string]int32       `protobuf:"bytes,5,rep,name=scores,proto3" json:"scores,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // puntajes por jugador
+	GameFinished  bool                   `protobuf:"varint,6,opt,name=game_finished,json=gameFinished,proto3" json:"game_finished,omitempty"`                                           //campo para sincronizar el final del juego
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GameState) Reset() {
 	*x = GameState{}
-	mi := &file_proto_game_proto_msgTypes[3]
+	mi := &file_proto_game_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -380,7 +243,7 @@ func (x *GameState) String() string {
 func (*GameState) ProtoMessage() {}
 
 func (x *GameState) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_game_proto_msgTypes[3]
+	mi := &file_proto_game_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -393,7 +256,7 @@ func (x *GameState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameState.ProtoReflect.Descriptor instead.
 func (*GameState) Descriptor() ([]byte, []int) {
-	return file_proto_game_proto_rawDescGZIP(), []int{3}
+	return file_proto_game_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GameState) GetTick() int32 {
@@ -438,6 +301,143 @@ func (x *GameState) GetGameFinished() bool {
 	return false
 }
 
+type PlayerState struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	X             int32                  `protobuf:"varint,2,opt,name=x,proto3" json:"x,omitempty"`
+	Y             int32                  `protobuf:"varint,3,opt,name=y,proto3" json:"y,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PlayerState) Reset() {
+	*x = PlayerState{}
+	mi := &file_proto_game_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerState) ProtoMessage() {}
+
+func (x *PlayerState) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_game_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerState.ProtoReflect.Descriptor instead.
+func (*PlayerState) Descriptor() ([]byte, []int) {
+	return file_proto_game_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *PlayerState) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *PlayerState) GetX() int32 {
+	if x != nil {
+		return x.X
+	}
+	return 0
+}
+
+func (x *PlayerState) GetY() int32 {
+	if x != nil {
+		return x.Y
+	}
+	return 0
+}
+
+// Estado de una basura
+type TrashState struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	X             int32                  `protobuf:"varint,2,opt,name=x,proto3" json:"x,omitempty"`
+	Y             int32                  `protobuf:"varint,3,opt,name=y,proto3" json:"y,omitempty"`
+	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Image         string                 `protobuf:"bytes,5,opt,name=image,proto3" json:"image,omitempty"` // nombre de la imagen exacta
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TrashState) Reset() {
+	*x = TrashState{}
+	mi := &file_proto_game_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TrashState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TrashState) ProtoMessage() {}
+
+func (x *TrashState) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_game_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TrashState.ProtoReflect.Descriptor instead.
+func (*TrashState) Descriptor() ([]byte, []int) {
+	return file_proto_game_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *TrashState) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *TrashState) GetX() int32 {
+	if x != nil {
+		return x.X
+	}
+	return 0
+}
+
+func (x *TrashState) GetY() int32 {
+	if x != nil {
+		return x.Y
+	}
+	return 0
+}
+
+func (x *TrashState) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *TrashState) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
 var File_proto_game_proto protoreflect.FileDescriptor
 
 const file_proto_game_proto_rawDesc = "" +
@@ -454,7 +454,17 @@ const file_proto_game_proto_rawDesc = "" +
 	"\x0e_total_playersB\x12\n" +
 	"\x10_pickup_trash_idB\x13\n" +
 	"\x11_deposit_trash_idB\x13\n" +
-	"\x11_deposit_bin_type\"F\n" +
+	"\x11_deposit_bin_type\"\xac\x02\n" +
+	"\tGameState\x12\x12\n" +
+	"\x04tick\x18\x01 \x01(\x05R\x04tick\x12+\n" +
+	"\aplayers\x18\x02 \x03(\v2\x11.game.PlayerStateR\aplayers\x12!\n" +
+	"\fgame_started\x18\x03 \x01(\bR\vgameStarted\x12&\n" +
+	"\x05trash\x18\x04 \x03(\v2\x10.game.TrashStateR\x05trash\x123\n" +
+	"\x06scores\x18\x05 \x03(\v2\x1b.game.GameState.ScoresEntryR\x06scores\x12#\n" +
+	"\rgame_finished\x18\x06 \x01(\bR\fgameFinished\x1a9\n" +
+	"\vScoresEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"F\n" +
 	"\vPlayerState\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\f\n" +
 	"\x01x\x18\x02 \x01(\x05R\x01x\x12\f\n" +
@@ -465,17 +475,7 @@ const file_proto_game_proto_rawDesc = "" +
 	"\x01x\x18\x02 \x01(\x05R\x01x\x12\f\n" +
 	"\x01y\x18\x03 \x01(\x05R\x01y\x12\x12\n" +
 	"\x04type\x18\x04 \x01(\tR\x04type\x12\x14\n" +
-	"\x05image\x18\x05 \x01(\tR\x05image\"\xac\x02\n" +
-	"\tGameState\x12\x12\n" +
-	"\x04tick\x18\x01 \x01(\x05R\x04tick\x12+\n" +
-	"\aplayers\x18\x02 \x03(\v2\x11.game.PlayerStateR\aplayers\x12!\n" +
-	"\fgame_started\x18\x03 \x01(\bR\vgameStarted\x12&\n" +
-	"\x05trash\x18\x04 \x03(\v2\x10.game.TrashStateR\x05trash\x123\n" +
-	"\x06scores\x18\x05 \x03(\v2\x1b.game.GameState.ScoresEntryR\x06scores\x12#\n" +
-	"\rgame_finished\x18\x06 \x01(\bR\fgameFinished\x1a9\n" +
-	"\vScoresEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01*,\n" +
+	"\x05image\x18\x05 \x01(\tR\x05image*,\n" +
 	"\n" +
 	"ActionType\x12\b\n" +
 	"\x04MOVE\x10\x00\x12\n" +
@@ -509,19 +509,19 @@ var file_proto_game_proto_goTypes = []any{
 	(ActionType)(0),      // 0: game.ActionType
 	(Direction)(0),       // 1: game.Direction
 	(*PlayerAction)(nil), // 2: game.PlayerAction
-	(*PlayerState)(nil),  // 3: game.PlayerState
-	(*TrashState)(nil),   // 4: game.TrashState
-	(*GameState)(nil),    // 5: game.GameState
+	(*GameState)(nil),    // 3: game.GameState
+	(*PlayerState)(nil),  // 4: game.PlayerState
+	(*TrashState)(nil),   // 5: game.TrashState
 	nil,                  // 6: game.GameState.ScoresEntry
 }
 var file_proto_game_proto_depIdxs = []int32{
 	0, // 0: game.PlayerAction.action:type_name -> game.ActionType
 	1, // 1: game.PlayerAction.direction:type_name -> game.Direction
-	3, // 2: game.GameState.players:type_name -> game.PlayerState
-	4, // 3: game.GameState.trash:type_name -> game.TrashState
+	4, // 2: game.GameState.players:type_name -> game.PlayerState
+	5, // 3: game.GameState.trash:type_name -> game.TrashState
 	6, // 4: game.GameState.scores:type_name -> game.GameState.ScoresEntry
 	2, // 5: game.GameService.Connect:input_type -> game.PlayerAction
-	5, // 6: game.GameService.Connect:output_type -> game.GameState
+	3, // 6: game.GameService.Connect:output_type -> game.GameState
 	6, // [6:7] is the sub-list for method output_type
 	5, // [5:6] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name

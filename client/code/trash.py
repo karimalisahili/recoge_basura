@@ -5,13 +5,13 @@ from random import choice
 # Define the mapping of trash types to their corresponding images
 TRASH_IMAGES = {
     'recycle': [
-        'botella.png', 'lata.png', 'vidrio.png', 'marcadores.png'
+        'lata.png', 'vidrio.png', 'caja-pizza.png'
     ],
     'garbage': [
-        'caja-pizza.png', 'curita.png', 'hueso.png', 'utensilios.png'
+        'pañal.png', 'lata_pintura.png', 'bombillo.png'
     ],
     'compost': [
-        'manzana.png', 'cascara.png', 'huevo.png', 'carton.png'
+        'manzana.png', 'cascara.png', 'huevo.png'
     ]
 }
 
@@ -30,8 +30,11 @@ class Trash(pygame.sprite.Sprite):
         else:
             raise ValueError(f"Unknown trash type: {self.type}")
 
-        # Scale the image to fit the tile size
-        self.image = pygame.transform.scale(self.image, (int(TILE_SIZE*1.5), int(TILE_SIZE*1.5)))
+        # Ajusta el tamaño de pañal y lata de pintura, el resto igual
+        if image_name in ['pañal.png', 'lata_pintura.png']:
+            self.image = pygame.transform.scale(self.image, (int(TILE_SIZE*1.0), int(TILE_SIZE*1.0)))
+        else:
+            self.image = pygame.transform.scale(self.image, (int(TILE_SIZE*1.5), int(TILE_SIZE*1.5)))
 
         # Asegura que pos sea una tupla de enteros
         if pos is None or len(pos) != 2:

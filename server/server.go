@@ -32,7 +32,7 @@ const (
 )
 
 // IP del servidor (modificable)
-var serverIP = "192.168.137.1"
+var serverIP = "192.168.1.8"
 
 type TrashState struct {
 	ID    string
@@ -127,9 +127,9 @@ func (s *server) Connect(stream pb.GameService_ConnectServer) error {
 		// Crea INITIAL_TRASH_COUNT basuras aleatorias
 		trashTypes := []string{"recycle", "garbage", "compost"}
 		trashImages := map[string][]string{
-			"recycle": {"botella.png", "lata.png", "vidrio.png", "marcadores.png"},
-			"garbage": {"caja-pizza.png", "curita.png", "hueso.png", "utensilios.png"},
-			"compost": {"manzana.png", "cascara.png", "huevo.png", "carton.png"},
+			"recycle": {"lata.png", "vidrio.png", "caja-pizza.png"},
+			"garbage": {"pañal.png", "lata_pintura.png", "bombillo.png"},
+			"compost": {"manzana.png", "cascara.png", "huevo.png"},
 		}
 		// Calcula los rangos válidos para x e y en tiles
 		xTileMin := COLINA_MIN_X_TILE + 1
