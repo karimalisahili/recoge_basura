@@ -702,9 +702,10 @@ class Game:
                             player.direction = pygame.Vector2(0, 0)
                         player.animate(dt)
                         self.map_surface.blit(player.image, player.rect)
-                        # Mostrar nombre del jugador si NO está cargando basura
-                        if not getattr(player, 'carrying_trash', False):
-                            name_font = pygame.font.SysFont(None, 38)  # Tamaño aumentado
+                        # Mostrar nombre del jugador SIEMPRE para el jugador local, y para los demás solo si no cargan basura
+                        show_name = (player_id == self.local_player_id) or not getattr(player, 'carrying_trash', False)
+                        if show_name:
+                            name_font = pygame.font.SysFont(None, 38)
                             name_text = name_font.render(player_id, True, (255,255,255))
                             # Fondo semitransparente para el nombre
                             bg = pygame.Surface((name_text.get_width()+12, name_text.get_height()+6), pygame.SRCALPHA)
