@@ -32,7 +32,7 @@ const (
 )
 
 // IP del servidor (modificable)
-var serverIP = "192.168.1.8"
+var serverIP = "192.168.0.136"
 
 type TrashState struct {
 	ID    string
@@ -114,11 +114,17 @@ func (s *server) Connect(stream pb.GameService_ConnectServer) error {
 		}
 	}
 
+	// Cambia la posición inicial según el orden de conexión
+	playerIndex := len(s.players)
+	startX := int32(22*TILE_SIZE + (playerIndex-1)*3*TILE_SIZE) // 22 para el primero, 25 para el segundo, etc.
+	if playerIndex == 1 {
+		startX = 22 * TILE_SIZE
+	}
 	player := &playerConn{
 		id:       playerID,
 		stream:   stream,
 		actions:  make(chan *pb.PlayerAction, 10),
-		position: &pb.PlayerState{PlayerId: playerID, X: 22 * TILE_SIZE, Y: 17 * TILE_SIZE},
+		position: &pb.PlayerState{PlayerId: playerID, X: startX, Y: 17 * TILE_SIZE},
 	}
 	s.players[playerID] = player
 

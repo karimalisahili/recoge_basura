@@ -22,7 +22,7 @@ SOUNDS_PATH = join(dirname(dirname(__file__)), 'sound')
 
 ZOOM = 0.4  # Ajusta el zoom aquí (1 = normal, 2 = doble, etc)
 
-SERVER_IP = "192.168.1.8"  # IP del servidor
+SERVER_IP = "192.168.0.136"  # IP del servidor
 SERVER_PORT = 50051
 
 def show_menu(display_surface):
@@ -702,6 +702,17 @@ class Game:
                             player.direction = pygame.Vector2(0, 0)
                         player.animate(dt)
                         self.map_surface.blit(player.image, player.rect)
+                        # Mostrar nombre del jugador si NO está cargando basura
+                        if not getattr(player, 'carrying_trash', False):
+                            name_font = pygame.font.SysFont(None, 38)  # Tamaño aumentado
+                            name_text = name_font.render(player_id, True, (255,255,255))
+                            # Fondo semitransparente para el nombre
+                            bg = pygame.Surface((name_text.get_width()+12, name_text.get_height()+6), pygame.SRCALPHA)
+                            bg.fill((0,0,0,180))
+                            name_x = player.rect.centerx - name_text.get_width()//2
+                            name_y = player.rect.top - name_text.get_height() - 14
+                            self.map_surface.blit(bg, (name_x-6, name_y-3))
+                            self.map_surface.blit(name_text, (name_x, name_y))
                         if player.carrying_trash:
                             player.draw_trash_icon(self.map_surface)
 
